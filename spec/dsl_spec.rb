@@ -75,6 +75,16 @@ describe Cumuliform::Template do
           Cumuliform::NoSuchLogicalId
         )
       end
+
+      it "supports the use of AWS:: pseudo parameters" do
+        subject.resource("Res") do
+          {
+            Referent: ref("AWS::AccountId")
+          }
+        end
+
+        expect { subject.to_hash }.not_to raise_error
+      end
     end
   end
 

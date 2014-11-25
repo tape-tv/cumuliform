@@ -16,6 +16,10 @@ module Cumuliform
   end
 
   class Template
+    AWS_PSEUDO_PARAMS = %w{
+      AWS::AccountId AWS::NotificationARNs AWS::NoValue
+      AWS::Region AWS::StackId AWS::StackName
+    }
     SECTIONS = {
       "Parameters" => :parameter,
       "Mappings" => :mapping,
@@ -27,7 +31,7 @@ module Cumuliform
     attr_reader :logical_ids
 
     def initialize
-      @logical_ids = Set.new
+      @logical_ids = Set.new(AWS_PSEUDO_PARAMS)
       SECTIONS.each do |section_name, _|
         instance_variable_set(:"@#{section_name}", {})
       end
