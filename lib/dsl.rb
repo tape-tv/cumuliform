@@ -66,7 +66,7 @@ module Cumuliform
     end
 
     def to_json
-      JSON.generate(to_hash, indent: '  ', space: ' ', object_nl: "\n")
+      JSON.pretty_generate(to_hash)
     end
 
     private
