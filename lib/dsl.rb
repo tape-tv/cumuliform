@@ -7,6 +7,7 @@ require 'set'
 module Cumuliform
   class DuplicateLogicalIDError < StandardError; end
   class NoResourcesDefinedError < StandardError; end
+  class EmptyItemError < StandardError; end
 
   def self.template(&block)
     template = Template.new
@@ -37,9 +38,9 @@ module Cumuliform
     end
 
     SECTIONS.each do |section_name, method_name|
-      define_method method_name do |logical_id, hash|
-        add_to_section(section_name, logical_id, hash)
-      end
+      define_method method_name, ->(logical_id, &block) {
+        add_to_section(section_name, logical_id, block)
+      }
     end
 
     def to_hash
@@ -64,12 +65,19 @@ module Cumuliform
       instance_variable_get(:"@#{name}")
     end
 
-    def add_to_section(section_name, logical_id, hash)
+    def add_to_section(section_name, logical_id, block)
       if logical_ids.include?(logical_id)
         raise DuplicateLogicalIDError, "Existing item with logical ID '#{logical_id}'"
       end
       logical_ids << logical_id
-      get_section(section_name)[logical_id] = hash
+      get_section(section_name)[logical_id] = generate_item(logical_id, block)
+    end
+
+    def generate_item(logical_id, block)
+      raise EmptyItemError, "Empty item '#{logical_id}'" if block.nil?
+      item_body = block.call
+      raise EmptyItemError, "Empty item '#{logical_id}'" if item_body.empty?
+      item_body
     end
   end
 end
