@@ -8,6 +8,7 @@ module Cumuliform
   class DuplicateLogicalIDError < StandardError; end
   class NoResourcesDefinedError < StandardError; end
   class EmptyItemError < StandardError; end
+  class NoSuchLogicalId < StandardError; end
 
   def self.template(&block)
     template = Template.new
@@ -43,11 +44,16 @@ module Cumuliform
       }
     end
 
+    def ref(logical_id)
+      raise NoSuchLogicalId, logical_id unless has_logical_id?(logical_id)
+      {"Ref" => logical_id}
+    end
+
     def to_hash
       output = {}
       SECTIONS.each do |section_name, _|
         section = get_section(section_name)
-        output[section_name] = section unless section.empty?
+        output[section_name] = generate_section(section) unless section.empty?
       end
       unless output.has_key?("Resources")
         raise NoResourcesDefinedError, "No resources defined"
@@ -61,21 +67,33 @@ module Cumuliform
 
     private
 
+    def has_logical_id?(logical_id)
+      logical_ids.include?(logical_id)
+    end
+
     def get_section(name)
       instance_variable_get(:"@#{name}")
     end
 
     def add_to_section(section_name, logical_id, block)
-      if logical_ids.include?(logical_id)
+      if has_logical_id?(logical_id)
         raise DuplicateLogicalIDError, "Existing item with logical ID '#{logical_id}'"
       end
       logical_ids << logical_id
-      get_section(section_name)[logical_id] = generate_item(logical_id, block)
+      get_section(section_name)[logical_id] = block
+    end
+
+    def generate_section(section)
+      output = {}
+      section.each do |logical_id, block|
+        output[logical_id] = generate_item(logical_id, block)
+      end
+      output
     end
 
     def generate_item(logical_id, block)
       raise EmptyItemError, "Empty item '#{logical_id}'" if block.nil?
-      item_body = block.call
+      item_body = instance_exec(&block)
       raise EmptyItemError, "Empty item '#{logical_id}'" if item_body.empty?
       item_body
     end

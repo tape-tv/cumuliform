@@ -32,15 +32,47 @@ describe Cumuliform::Template do
         expect(output["Resources"]).to eq({"Hello" => {k: "v"}})
       end
 
-      it "does not allow items to be defined without a block" do
-        expect { subject.resource("Hello") }.to raise_error(
+      it "complains about items defined without a block" do
+        subject.resource("Hello")
+
+        expect { subject.to_hash }.to raise_error(
           Cumuliform::EmptyItemError
         )
       end
 
       it "does not allow empty items to be defined" do
-        expect { subject.resource("Hello") { {} } }.to raise_error(
+        subject.resource("Hello") do
+          {}
+        end
+
+        expect { subject.to_hash }.to raise_error(
           Cumuliform::EmptyItemError
+        )
+      end
+    end
+
+    context "references" do
+      it "provides a convenience function for the Ref form" do
+        subject.parameter("Param") { {k: "v"} }
+        subject.resource("Res") do
+          {
+            Referent: ref("Param")
+          }
+        end
+
+        output = subject.to_hash
+        expect(output["Resources"]["Res"]).to eq({Referent: {"Ref" => "Param"}})
+      end
+
+      it "complains about a missing Logical ID at generation time" do
+        subject.resource("Res") do
+          {
+            Referent: ref("Param")
+          }
+        end
+
+        expect { subject.to_hash }.to raise_error(
+          Cumuliform::NoSuchLogicalId
         )
       end
     end
