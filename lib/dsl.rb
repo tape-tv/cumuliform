@@ -84,11 +84,11 @@ module Cumuliform
       self
     end
 
-    def fragment(name, &block)
+    def fragment(name, *args, &block)
       if block_given?
         define_fragment(name, block)
       else
-        include_fragment(name)
+        include_fragment(name, *args)
       end
     end
 
@@ -160,11 +160,11 @@ module Cumuliform
       fragments[name] = block
     end
 
-    def include_fragment(name)
+    def include_fragment(name, *args)
       unless fragments.has_key?(name)
         raise Error::FragmentNotFound, name
       end
-      instance_exec(&fragments[name])
+      instance_exec(*args, &fragments[name])
     end
   end
 end

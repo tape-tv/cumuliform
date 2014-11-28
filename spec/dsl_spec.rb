@@ -158,6 +158,20 @@ describe Cumuliform::Template do
 
         expect(output['Resources']['Ohai']).to eq({key: {"Ref" => "Param"}})
       end
+
+      it "allows arguments to be passed to the block" do
+        subject.fragment :frag do |arg|
+          {key: arg}
+        end
+
+        subject.resource("Ohai") do
+          fragment(:frag, "Val")
+        end
+
+        output = subject.to_hash
+
+        expect(output['Resources']['Ohai']).to eq({key: "Val"})
+      end
     end
 
     context "housekeeping" do
