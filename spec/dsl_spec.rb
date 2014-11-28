@@ -9,7 +9,7 @@ describe Cumuliform::Template do
         subject.resource("Hello") { {k: "v"} }
 
         expect { subject.resource("Hello") { {k: 0} } }.to raise_error(
-          Cumuliform::DuplicateLogicalIDError
+          Cumuliform::Error::DuplicateLogicalID
         )
       end
 
@@ -17,7 +17,7 @@ describe Cumuliform::Template do
         subject.resource("Hello") { {k: "v"} }
 
         expect { subject.parameter("Hello") { {k: 1} } }.to raise_error(
-          Cumuliform::DuplicateLogicalIDError
+          Cumuliform::Error::DuplicateLogicalID
         )
       end
     end
@@ -36,7 +36,7 @@ describe Cumuliform::Template do
         subject.resource("Hello")
 
         expect { subject.to_hash }.to raise_error(
-          Cumuliform::EmptyItemError
+          Cumuliform::Error::EmptyItem
         )
       end
 
@@ -46,7 +46,7 @@ describe Cumuliform::Template do
         end
 
         expect { subject.to_hash }.to raise_error(
-          Cumuliform::EmptyItemError
+          Cumuliform::Error::EmptyItem
         )
       end
     end
@@ -72,7 +72,7 @@ describe Cumuliform::Template do
         end
 
         expect { subject.to_hash }.to raise_error(
-          Cumuliform::NoSuchLogicalId
+          Cumuliform::Error::NoSuchLogicalId
         )
       end
 
@@ -112,8 +112,70 @@ describe Cumuliform::Template do
 
     it "complains if there are no resources" do
       expect { subject.to_hash }.to raise_error(
-        Cumuliform::NoResourcesDefinedError
+        Cumuliform::Error::NoResourcesDefined
       )
+    end
+  end
+
+  describe "fragments" do
+    context "definition" do
+      it "allows a fragment to be defined" do
+        subject.fragment :frag do
+          {key: "value"}
+        end
+
+        expect(subject.fragments[:frag].call).to eq({key: "value"})
+      end
+    end
+
+    context "inclusion" do
+      it "allows a fragment to be included" do
+        subject.fragment :frag do
+          {key: "value"}
+        end
+
+        subject.resource("Ohai") do
+          fragment(:frag)
+        end
+
+        output = subject.to_hash
+
+        expect(output['Resources']['Ohai']).to eq({key: "value"})
+      end
+
+      it "correctly handles deferred execution like ref()" do
+        subject.fragment :frag do
+          {key: ref("Param")}
+        end
+
+        subject.parameter("Param") { "Value" }
+
+        subject.resource("Ohai") do
+          fragment(:frag)
+        end
+
+        output = subject.to_hash
+
+        expect(output['Resources']['Ohai']).to eq({key: {"Ref" => "Param"}})
+      end
+    end
+
+    context "housekeeping" do
+      it "does not allow a fragment name collision" do
+        subject.fragment(:frag) { "Value" }
+
+        expect { subject.fragment(:frag) { "Other value" } }.to raise_error(
+          Cumuliform::Error::FragmentAlreadyDefined
+        )
+      end
+
+      it "does not allow a non-existent fragment to be included" do
+        subject.resource("Ohai") { fragment(:frag) }
+
+        expect { subject.to_hash }.to raise_error(
+          Cumuliform::Error::FragmentNotFound
+        )
+      end
     end
   end
 end

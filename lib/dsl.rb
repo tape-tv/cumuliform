@@ -5,10 +5,51 @@ require 'json'
 require 'set'
 
 module Cumuliform
-  class DuplicateLogicalIDError < StandardError; end
-  class NoResourcesDefinedError < StandardError; end
-  class EmptyItemError < StandardError; end
-  class NoSuchLogicalId < StandardError; end
+  module Error
+    class IDError < StandardError
+      attr_reader :id
+
+      def initialize(id)
+        @id = id
+      end
+    end
+
+    class DuplicateLogicalID < IDError
+      def to_s
+        "Existing item with logical ID '#{id}'"
+      end
+    end
+
+    class NoSuchLogicalId < IDError
+      def to_s
+        "No such logical ID '#{id}'"
+      end
+    end
+
+    class FragmentAlreadyDefined < IDError
+      def to_s
+        "Fragment '#{id}' already defined"
+      end
+    end
+
+    class FragmentNotFound < IDError
+      def to_s
+        "No fragment with name '#{id}'"
+      end
+    end
+
+    class EmptyItem < IDError
+      def to_s
+        "Empty item '#{id}'"
+      end
+    end
+
+    class NoResourcesDefined < StandardError
+      def to_s
+        "No resources defined"
+      end
+    end
+  end
 
   def self.template(&block)
     template = Template.new
@@ -28,10 +69,11 @@ module Cumuliform
       "Outputs" => :output
     }
 
-    attr_reader :logical_ids
+    attr_reader :logical_ids, :fragments
 
     def initialize
       @logical_ids = Set.new(AWS_PSEUDO_PARAMS)
+      @fragments = {}
       SECTIONS.each do |section_name, _|
         instance_variable_set(:"@#{section_name}", {})
       end
@@ -42,6 +84,14 @@ module Cumuliform
       self
     end
 
+    def fragment(name, &block)
+      if block_given?
+        define_fragment(name, block)
+      else
+        include_fragment(name)
+      end
+    end
+
     SECTIONS.each do |section_name, method_name|
       define_method method_name, ->(logical_id, &block) {
         add_to_section(section_name, logical_id, block)
@@ -49,7 +99,9 @@ module Cumuliform
     end
 
     def ref(logical_id)
-      raise NoSuchLogicalId, logical_id unless has_logical_id?(logical_id)
+      unless has_logical_id?(logical_id)
+        raise Error::NoSuchLogicalId, logical_id
+      end
       {"Ref" => logical_id}
     end
 
@@ -59,9 +111,8 @@ module Cumuliform
         section = get_section(section_name)
         output[section_name] = generate_section(section) unless section.empty?
       end
-      unless output.has_key?("Resources")
-        raise NoResourcesDefinedError, "No resources defined"
-      end
+
+      raise Error::NoResourcesDefined unless output.has_key?("Resources")
       output
     end
 
@@ -81,7 +132,7 @@ module Cumuliform
 
     def add_to_section(section_name, logical_id, block)
       if has_logical_id?(logical_id)
-        raise DuplicateLogicalIDError, "Existing item with logical ID '#{logical_id}'"
+        raise Error::DuplicateLogicalID, logical_id
       end
       logical_ids << logical_id
       get_section(section_name)[logical_id] = block
@@ -96,10 +147,24 @@ module Cumuliform
     end
 
     def generate_item(logical_id, block)
-      raise EmptyItemError, "Empty item '#{logical_id}'" if block.nil?
+      raise Error::EmptyItem, logical_id if block.nil?
       item_body = instance_exec(&block)
-      raise EmptyItemError, "Empty item '#{logical_id}'" if item_body.empty?
+      raise Error::EmptyItem, logical_id if item_body.empty?
       item_body
+    end
+
+    def define_fragment(name, block)
+      if fragments.has_key?(name)
+        raise Error::FragmentAlreadyDefined, name
+      end
+      fragments[name] = block
+    end
+
+    def include_fragment(name)
+      unless fragments.has_key?(name)
+        raise Error::FragmentNotFound, name
+      end
+      instance_exec(&fragments[name])
     end
   end
 end
