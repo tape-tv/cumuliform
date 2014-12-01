@@ -27,4 +27,30 @@ describe "Template importing" do
       expect(importing_template.to_hash).to eq({"Resources" => {"Eg" => "Other"}})
     end
   end
+
+  context "verifying lookups" do
+    it "can look up a logical id in an imported template" do
+      base_template = Cumuliform.template {
+        resource("Eg") { "Value" }
+      }
+
+      importing_template = Cumuliform.template {
+        import base_template
+      }
+
+      expect(importing_template.has_logical_id?("Eg")).to be(true)
+    end
+
+    it "leaves xref() working exactly as expected" do
+      base_template = Cumuliform.template {
+        resource("Eg") { "Value" }
+      }
+
+      importing_template = Cumuliform.template {
+        import base_template
+      }
+
+      expect(importing_template.xref("Eg")).to eq("Eg")
+    end
+  end
 end

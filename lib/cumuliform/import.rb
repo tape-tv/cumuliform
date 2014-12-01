@@ -6,6 +6,12 @@ module Cumuliform
       imports << template
     end
 
+    def has_logical_id?(logical_id)
+      (imports.reverse).inject(logical_ids.include?(logical_id)) { |found, template|
+        found || template.has_logical_id?(logical_id)
+      }
+    end
+
     private
 
     def imports

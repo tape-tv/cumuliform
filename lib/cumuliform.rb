@@ -60,12 +60,12 @@ module Cumuliform
 
     private
 
-    def has_logical_id?(logical_id)
+    def has_local_logical_id?(logical_id)
       logical_ids.include?(logical_id)
     end
 
     def add_to_section(section_name, logical_id, block)
-      if has_logical_id?(logical_id)
+      if has_local_logical_id?(logical_id)
         raise Error::DuplicateLogicalID, logical_id
       end
       logical_ids << logical_id
