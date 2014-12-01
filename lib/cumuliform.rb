@@ -6,6 +6,7 @@ require 'set'
 require_relative 'cumuliform/error'
 require_relative 'cumuliform/fragments'
 require_relative 'cumuliform/functions'
+require_relative 'cumuliform/import'
 require_relative 'cumuliform/output'
 
 module Cumuliform
@@ -27,16 +28,14 @@ module Cumuliform
   end
 
   class Template
+    include Import
     include Fragments
     include Functions
     include Output
 
-    attr_reader :logical_ids
-
     def initialize
-      @logical_ids = Set.new(AWS_PSEUDO_PARAMS)
       SECTIONS.each do |section_name, _|
-        instance_variable_set(:"@#{section_name}", {})
+        instance_variable_set(:"@#{section_name}", Section.new(section_name, imports))
       end
     end
 
@@ -45,20 +44,24 @@ module Cumuliform
       self
     end
 
+    def logical_ids
+      @logical_ids ||= Set.new(AWS_PSEUDO_PARAMS)
+    end
+
     SECTIONS.each do |section_name, method_name|
       define_method method_name, ->(logical_id, &block) {
         add_to_section(section_name, logical_id, block)
       }
     end
 
+    def get_section(name)
+      instance_variable_get(:"@#{name}")
+    end
+
     private
 
     def has_logical_id?(logical_id)
       logical_ids.include?(logical_id)
-    end
-
-    def get_section(name)
-      instance_variable_get(:"@#{name}")
     end
 
     def add_to_section(section_name, logical_id, block)
