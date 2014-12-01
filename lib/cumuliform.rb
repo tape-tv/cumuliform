@@ -4,6 +4,8 @@
 require 'json'
 require 'set'
 require_relative 'cumuliform/error'
+require_relative 'cumuliform/fragments'
+require_relative 'cumuliform/functions'
 require_relative 'cumuliform/output'
 
 module Cumuliform
@@ -25,13 +27,14 @@ module Cumuliform
   end
 
   class Template
+    include Fragments
+    include Functions
     include Output
 
-    attr_reader :logical_ids, :fragments
+    attr_reader :logical_ids
 
     def initialize
       @logical_ids = Set.new(AWS_PSEUDO_PARAMS)
-      @fragments = {}
       SECTIONS.each do |section_name, _|
         instance_variable_set(:"@#{section_name}", {})
       end
@@ -40,14 +43,6 @@ module Cumuliform
     def define(&block)
       instance_exec(&block)
       self
-    end
-
-    def fragment(name, *args, &block)
-      if block_given?
-        define_fragment(name, block)
-      else
-        include_fragment(name, *args)
-      end
     end
 
     SECTIONS.each do |section_name, method_name|
@@ -83,20 +78,6 @@ module Cumuliform
       end
       logical_ids << logical_id
       get_section(section_name)[logical_id] = block
-    end
-
-    def define_fragment(name, block)
-      if fragments.has_key?(name)
-        raise Error::FragmentAlreadyDefined, name
-      end
-      fragments[name] = block
-    end
-
-    def include_fragment(name, *args)
-      unless fragments.has_key?(name)
-        raise Error::FragmentNotFound, name
-      end
-      instance_exec(*args, &fragments[name])
     end
   end
 end
