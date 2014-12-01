@@ -3,53 +3,21 @@
 
 require 'json'
 require 'set'
+require_relative 'cumuliform/error'
+require_relative 'cumuliform/output'
 
 module Cumuliform
-  module Error
-    class IDError < StandardError
-      attr_reader :id
-
-      def initialize(id)
-        @id = id
-      end
-    end
-
-    class DuplicateLogicalID < IDError
-      def to_s
-        "Existing item with logical ID '#{id}'"
-      end
-    end
-
-    class NoSuchLogicalId < IDError
-      def to_s
-        "No such logical ID '#{id}'"
-      end
-    end
-
-    class FragmentAlreadyDefined < IDError
-      def to_s
-        "Fragment '#{id}' already defined"
-      end
-    end
-
-    class FragmentNotFound < IDError
-      def to_s
-        "No fragment with name '#{id}'"
-      end
-    end
-
-    class EmptyItem < IDError
-      def to_s
-        "Empty item '#{id}'"
-      end
-    end
-
-    class NoResourcesDefined < StandardError
-      def to_s
-        "No resources defined"
-      end
-    end
-  end
+  AWS_PSEUDO_PARAMS = %w{
+      AWS::AccountId AWS::NotificationARNs AWS::NoValue
+      AWS::Region AWS::StackId AWS::StackName
+  }
+  SECTIONS = {
+    "Parameters" => :parameter,
+    "Mappings" => :mapping,
+    "Conditions" => :condition,
+    "Resources" => :resource,
+    "Outputs" => :output
+  }
 
   def self.template(&block)
     template = Template.new
@@ -57,17 +25,7 @@ module Cumuliform
   end
 
   class Template
-    AWS_PSEUDO_PARAMS = %w{
-      AWS::AccountId AWS::NotificationARNs AWS::NoValue
-      AWS::Region AWS::StackId AWS::StackName
-    }
-    SECTIONS = {
-      "Parameters" => :parameter,
-      "Mappings" => :mapping,
-      "Conditions" => :condition,
-      "Resources" => :resource,
-      "Outputs" => :output
-    }
+    include Output
 
     attr_reader :logical_ids, :fragments
 
@@ -109,21 +67,6 @@ module Cumuliform
       logical_id
     end
 
-    def to_hash
-      output = {}
-      SECTIONS.each do |section_name, _|
-        section = get_section(section_name)
-        output[section_name] = generate_section(section) unless section.empty?
-      end
-
-      raise Error::NoResourcesDefined unless output.has_key?("Resources")
-      output
-    end
-
-    def to_json
-      JSON.pretty_generate(to_hash)
-    end
-
     private
 
     def has_logical_id?(logical_id)
@@ -140,21 +83,6 @@ module Cumuliform
       end
       logical_ids << logical_id
       get_section(section_name)[logical_id] = block
-    end
-
-    def generate_section(section)
-      output = {}
-      section.each do |logical_id, block|
-        output[logical_id] = generate_item(logical_id, block)
-      end
-      output
-    end
-
-    def generate_item(logical_id, block)
-      raise Error::EmptyItem, logical_id if block.nil?
-      item_body = instance_exec(&block)
-      raise Error::EmptyItem, logical_id if item_body.empty?
-      item_body
     end
 
     def define_fragment(name, block)

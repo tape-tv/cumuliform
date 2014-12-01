@@ -1,6 +1,6 @@
 $:.unshift(File.expand_path('../lib', __dir__))
 
-require 'dsl'
+require 'cumuliform'
 
 describe Cumuliform::Template do
   context "definition" do
