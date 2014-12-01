@@ -51,17 +51,6 @@ module Cumuliform
       }
     end
 
-    def ref(logical_id)
-      {"Ref" => xref(logical_id)}
-    end
-
-    def xref(logical_id)
-      unless has_logical_id?(logical_id)
-        raise Error::NoSuchLogicalId, logical_id
-      end
-      logical_id
-    end
-
     private
 
     def has_logical_id?(logical_id)
