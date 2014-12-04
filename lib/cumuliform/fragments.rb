@@ -34,11 +34,11 @@ module Cumuliform
       fragments[name] = block
     end
 
-    def include_fragment(name, *args)
+    def include_fragment(name, opts = {})
       unless has_fragment?(name)
         raise Error::FragmentNotFound, name
       end
-      instance_exec(*args, &find_fragment(name))
+      instance_exec(opts, &find_fragment(name))
     end
   end
 end
