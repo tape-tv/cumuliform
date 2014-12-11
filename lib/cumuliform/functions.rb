@@ -13,6 +13,11 @@ module Cumuliform
         template.verify_mapping_logical_id!(mapping_logical_id)
         {"Fn::FindInMap" => [mapping_logical_id, level_1_key, level_2_key]}
       end
+
+      def get_att(resource_logical_id, attr_name)
+        template.verify_resource_logical_id!(resource_logical_id)
+        {"Fn::GetAtt" => [resource_logical_id, attr_name]}
+      end
     end
 
     def xref(logical_id)

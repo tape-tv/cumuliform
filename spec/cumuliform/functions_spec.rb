@@ -106,5 +106,50 @@ describe "CloudFormation Intrinsic functions" do
         )
       end
     end
+
+    context "Fn::GetAtt" do
+      it "generates the correct output" do
+        template.resource("R1") { {k: "Value"} }
+
+        template.resource "Res" do
+          {k: fn.get_att("R1", "SomeAttr")}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "R1" => {
+              k: "Value"
+            },
+            "Res" => {
+              k: {"Fn::GetAtt" => ["R1", "SomeAttr"]}
+            }
+          }
+        )
+      end
+
+      it "errors on bad resource logical id" do
+        template.resource "Res" do
+          {k: fn.get_att("R1", "SomeAttr")}
+        end
+
+        expect { template.to_hash }.to raise_error(
+          Cumuliform::Error::NoSuchLogicalIdInResources
+        )
+      end
+
+      it "errors on being given a non-mapping logical id" do
+        template.parameter "NotAResource" do
+          {k: "Value"}
+        end
+
+        template.resource "Res" do
+          {k: fn.get_att("NotAResource", "SomeAttr")}
+        end
+
+        expect { template.to_hash }.to raise_error(
+          Cumuliform::Error::NoSuchLogicalIdInResources
+        )
+      end
+    end
   end
 end
