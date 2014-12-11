@@ -49,69 +49,6 @@ describe Cumuliform::Template do
       end
     end
 
-    describe "Intrinsic functions" do
-      context "references" do
-        it "provides a convenience function for the Ref intrinsic function" do
-          subject.parameter("Param") { {k: "v"} }
-          subject.resource("Res") do
-            {
-              Referent: ref("Param")
-            }
-          end
-
-          output = subject.to_hash
-          expect(output["Resources"]["Res"]).to eq({Referent: {"Ref" => "Param"}})
-        end
-
-        it "complains about a missing Logical ID at generation time" do
-          subject.resource("Res") do
-            {
-              Referent: ref("Param")
-            }
-          end
-
-          expect { subject.to_hash }.to raise_error(
-            Cumuliform::Error::NoSuchLogicalId
-          )
-        end
-
-        it "supports the use of AWS:: pseudo parameters" do
-          subject.resource("Res") do
-            {
-              Referent: ref("AWS::AccountId")
-            }
-          end
-
-          expect { subject.to_hash }.not_to raise_error
-        end
-      end
-    end
-  end
-
-  context "verified cross-references" do
-    it "provides a convenience function for verifying a logical id ref without using the Ref intrinsic function" do
-      subject.parameter("Param") { {k: "v"} }
-      subject.resource("Res") do
-        {
-          Referent: xref("Param")
-        }
-      end
-
-      output = subject.to_hash
-      expect(output["Resources"]["Res"]).to eq({Referent: "Param"})
-    end
-
-    it "complains about a missing Logical ID at generation time" do
-      subject.resource("Res") do
-        {
-          Referent: ref("Param")
-        }
-      end
-
-      expect { subject.to_hash }.to raise_error(
-        Cumuliform::Error::NoSuchLogicalId
-      )
-    end
   end
 
   context "output" do
