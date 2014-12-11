@@ -12,6 +12,11 @@ module Cumuliform
       }
     end
 
+    def verify_logical_id!(logical_id)
+      raise Error::NoSuchLogicalId, logical_id unless has_logical_id?(logical_id)
+      true
+    end
+
     private
 
     def imports
@@ -32,8 +37,16 @@ module Cumuliform
       items[name] = item
     end
 
+    def [](name)
+      merged[name]
+    end
+
     def each(&block)
       merged.each(&block)
+    end
+
+    def member?(name)
+      merged.member?(name)
     end
 
     def empty?

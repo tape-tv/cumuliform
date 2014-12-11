@@ -10,7 +10,8 @@ module Cumuliform
       end
 
       def find_in_map(mapping_logical_id, level_1_key, level_2_key)
-        {"Fn::FindInMap" => [template.xref(mapping_logical_id), level_1_key, level_2_key]}
+        template.verify_mapping_logical_id!(mapping_logical_id)
+        {"Fn::FindInMap" => [mapping_logical_id, level_1_key, level_2_key]}
       end
     end
 

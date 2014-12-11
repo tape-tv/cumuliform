@@ -89,7 +89,20 @@ describe "CloudFormation Intrinsic functions" do
         end
 
         expect { template.to_hash }.to raise_error(
-          Cumuliform::Error::NoSuchLogicalId
+          Cumuliform::Error::NoSuchLogicalIdInMappings
+        )
+      end
+
+      it "errors on being given a non-mapping logical id" do
+        template.parameter "NotAMap" do
+          {k: "Value"}
+        end
+        template.resource "Res" do
+          {k: fn.find_in_map("NotAMap", "level-1", "level-2")}
+        end
+
+        expect { template.to_hash }.to raise_error(
+          Cumuliform::Error::NoSuchLogicalIdInMappings
         )
       end
     end
