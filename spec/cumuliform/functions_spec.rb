@@ -151,5 +151,25 @@ describe "CloudFormation Intrinsic functions" do
         )
       end
     end
+
+    context "Fn::Join" do
+      it "generates the correct output" do
+        template.resource "Res" do
+          {k: fn.join("", ["one", "two"])}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Join" => ["", ["one", "two"]]}
+            }
+          }
+        )
+      end
+
+      it "explodes if you don't hand it an array" do
+        expect { template.fn.join("", "") }.to raise_error(ArgumentError)
+      end
+    end
   end
 end

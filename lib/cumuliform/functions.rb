@@ -18,6 +18,11 @@ module Cumuliform
         template.verify_resource_logical_id!(resource_logical_id)
         {"Fn::GetAtt" => [resource_logical_id, attr_name]}
       end
+
+      def join(separator, args)
+        raise ArgumentError, "Second argument must be an Array" unless args.is_a?(Array)
+        {"Fn::Join" => [separator, args]}
+      end
     end
 
     def xref(logical_id)
