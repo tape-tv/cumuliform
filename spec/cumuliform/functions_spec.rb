@@ -187,5 +187,35 @@ describe "CloudFormation Intrinsic functions" do
         )
       end
     end
+
+    context "Fn::GetAZs" do
+      it "generates the correct output without arguments" do
+        template.resource "Res" do
+          {k: fn.get_azs}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::GetAZs" => ""}
+            }
+          }
+        )
+      end
+
+      it "generates the correct output with an argument" do
+        template.resource "Res" do
+          {k: fn.get_azs("eu-central-1")}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::GetAZs" => "eu-central-1"}
+            }
+          }
+        )
+      end
+    end
   end
 end

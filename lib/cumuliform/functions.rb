@@ -27,6 +27,10 @@ module Cumuliform
       def base64(value)
         {"Fn::Base64" => value}
       end
+
+      def get_azs(value = "")
+        {"Fn::GetAZs" => value}
+      end
     end
 
     def xref(logical_id)
