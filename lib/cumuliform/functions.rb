@@ -23,6 +23,10 @@ module Cumuliform
         raise ArgumentError, "Second argument must be an Array" unless args.is_a?(Array)
         {"Fn::Join" => [separator, args]}
       end
+
+      def base64(value)
+        {"Fn::Base64" => value}
+      end
     end
 
     def xref(logical_id)

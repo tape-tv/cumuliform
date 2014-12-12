@@ -171,5 +171,21 @@ describe "CloudFormation Intrinsic functions" do
         expect { template.fn.join("", "") }.to raise_error(ArgumentError)
       end
     end
+
+    context "Fn::Base64" do
+      it "generates the correct output" do
+        template.resource "Res" do
+          {k: fn.base64("string")}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Base64" => "string"}
+            }
+          }
+        )
+      end
+    end
   end
 end
