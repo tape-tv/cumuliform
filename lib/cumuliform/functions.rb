@@ -36,6 +36,9 @@ module Cumuliform
         unless index.is_a?(Integer) && index >= 0
           raise ArgumentError, "index must be a positive integer"
         end
+        if array.is_a?(Array) && index >= array.length
+          raise IndexError, "index must be in the range 0 <= index < array.length"
+        end
         {"Fn::Select" => [index.to_s, array]}
       end
     end

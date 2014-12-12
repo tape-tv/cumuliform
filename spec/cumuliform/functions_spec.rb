@@ -240,6 +240,24 @@ describe "CloudFormation Intrinsic functions" do
       it "explodes if index is not a positive integer" do
         expect { template.fn.select(-1, ["a"]) }.to raise_error(ArgumentError)
       end
+
+      it "explodes if array is an array literal and index is too large" do
+        expect { template.fn.select(2, ["a"]) }.to raise_error(IndexError)
+      end
+
+      it "doesn't check lenth constraints on non-array-literal array args (e.g. ref())" do
+        template.resource "Res" do
+          {k: fn.select(2, {"Fn::Ref" => "SomeAttr"})}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Select" => ["2", {"Fn::Ref" => "SomeAttr"}]}
+            }
+          }
+        )
+      end
     end
   end
 end
