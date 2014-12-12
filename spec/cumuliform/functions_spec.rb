@@ -217,5 +217,29 @@ describe "CloudFormation Intrinsic functions" do
         )
       end
     end
+
+    context "Fn::Select" do
+      it "generates the correct output" do
+        template.resource "Res" do
+          {k: fn.select(1, ["a", "b", "c"])}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Select" => ["1", ["a", "b", "c"]]}
+            }
+          }
+        )
+      end
+
+      it "explodes if index is not an integer" do
+        expect { template.fn.select("a", ["a"]) }.to raise_error(ArgumentError)
+      end
+
+      it "explodes if index is not a positive integer" do
+        expect { template.fn.select(-1, ["a"]) }.to raise_error(ArgumentError)
+      end
+    end
   end
 end
