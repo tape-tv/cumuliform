@@ -218,6 +218,39 @@ describe "CloudFormation Intrinsic functions" do
       end
     end
 
+    context "Fn::Equals" do
+      it "generates the correct output with arguments" do
+        template.resource "Res" do
+          {k: fn.equals("foo", "bar")}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Equals" => ["foo", "bar"]}
+            }
+          }
+        )
+      end
+    end
+
+
+    context "Fn::If" do
+      it "checks conditions with if" do
+        template.resource "Res" do
+          {k: fn.if("condition", "true_value", "false_value")}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::If" => ["condition", "true_value", "false_value"]}
+            }
+          }
+        )
+      end
+    end
+
     context "Fn::Select" do
       it "generates the correct output" do
         template.resource "Res" do
