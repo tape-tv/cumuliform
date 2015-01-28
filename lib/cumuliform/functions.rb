@@ -32,6 +32,14 @@ module Cumuliform
         {"Fn::GetAZs" => value}
       end
 
+      def equals(value, other_value)
+        {"Fn::Equals" => [value, other_value]}
+      end
+
+      def if(condition, true_value, false_value)
+        {"Fn::If" => [condition, true_value, false_value]}
+      end
+
       def select(index, array)
         unless index.is_a?(Integer) && index >= 0
           raise ArgumentError, "index must be a positive integer"
