@@ -79,4 +79,35 @@ describe Cumuliform::Template do
       )
     end
   end
+
+  context "helpers" do
+    it "includes modules with helper functions as instance methods correctly" do
+      h = Module.new do
+        def da_helper
+          resource("Helped") { {k: "v"} }
+        end
+      end
+
+      subject.helpers(h)
+      subject.da_helper
+
+      expect { subject.resource("Helped") }.to raise_error(
+        Cumuliform::Error::DuplicateLogicalID
+      )
+    end
+
+    it "turns blocks into modules and makes them helpers too" do
+      subject.helpers do
+        def da_helper
+          resource("Helped") { {k: "v"} }
+        end
+      end
+
+      subject.da_helper
+
+      expect { subject.resource("Helped") }.to raise_error(
+        Cumuliform::Error::DuplicateLogicalID
+      )
+    end
+  end
 end
