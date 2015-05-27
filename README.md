@@ -2,7 +2,15 @@
 
 [![Build Status](https://travis-ci.org/tape-tv/cumuliform.svg?branch=master)](https://travis-ci.org/tape-tv/cumuliform) [![Code Climate](https://codeclimate.com/github/tape-tv/cumuliform/badges/gpa.svg)](https://codeclimate.com/github/tape-tv/cumuliform) [![Test Coverage](https://codeclimate.com/github/tape-tv/cumuliform/badges/coverage.svg)](https://codeclimate.com/github/tape-tv/cumuliform/coverage)
 
-A DSL and library for the generation and reuse of Amazon's AWS CloudFormation templates, extracted from ops and deployment code at tape.tv
+Amazon’s [CloudFormation AWS service][cf] provides a way to describe infrastructure stacks using a JSON template. We love CloudFormation, and use it a lot, but the JSON templates are hard to write and read, it's very hard to reuse things shared between stacks, and it's very easy to make simple typos which are not discovered until minutes into stack creation when things fail for seemingly crazy reasons.
+
+[cf]: http://aws.amazon.com/cloudformation/
+
+Cumuliform is a tool to help eliminate as many sources of reference errors as possible, and to allow easier reuse of template parts between stacks. It provides a simple DSL that generates reliably valid JSON and enforces referential integrity through convenience wrappers around the common points where CloudFormation expects references between resources. provides.
+
+Cumuliform has been extracted from ops and deployment code at [tape.tv][tape]
+
+[tape]: https://www.tape.tv/
 
 ## Installation
 
@@ -22,7 +30,31 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+TODO: Add comprehensive examples.
+
+The simplest way to use Cumuliform is to define a template `.rb` file like this:
+
+```ruby
+Cumuliform.template do
+  resource "MyInstance" do
+    {
+      Type: 'AWS::EC2::Instance',
+      ...
+    }
+  end
+end
+```
+
+and add a Rake file task like this:
+
+```ruby
+rule ".cform" => ".rb" do |t|
+  template = eval(File.read(t.source), binding, t.source)
+  File.open(t.name, 'w:utf-8') { |f| f.write(template.to_json) }
+end
+```
+
+The task reads and `eval`s the source `template.rb` template, the template returns a new `Cumuliform::Template` instance, and then calls its `to_json` method and writes the result to `template.cform`
 
 ## Development
 
