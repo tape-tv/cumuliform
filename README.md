@@ -1,5 +1,7 @@
 # Cumuliform
 
+[![Build Status](https://travis-ci.org/tape-tv/cumuliform.svg?branch=master)](https://travis-ci.org/tape-tv/cumuliform) [![Code Climate](https://codeclimate.com/github/tape-tv/cumuliform/badges/gpa.svg)](https://codeclimate.com/github/tape-tv/cumuliform) [![Test Coverage](https://codeclimate.com/github/tape-tv/cumuliform/badges/coverage.svg)](https://codeclimate.com/github/tape-tv/cumuliform/coverage)
+
 A DSL and library for the generation and reuse of Amazon's AWS CloudFormation templates, extracted from ops and deployment code at tape.tv
 
 ## Installation
