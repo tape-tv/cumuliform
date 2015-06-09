@@ -28,35 +28,92 @@ Or install it yourself as:
 
     $ gem install cumuliform
 
-## Usage
+# Getting started
 
-TODO: Add comprehensive examples.
+You’ll probably want to familiarise yourself with the [CloudFormation getting started guide][cf-get-started] if you haven’t already.
 
-The simplest way to use Cumuliform is to define a template `.rb` file like this:
+[cf-get-started]: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/GettingStarted.html
+
+To quickly recap the key points for template authors:
+
+1. A template is a JSON file containing a single Object (`{}`)
+2. The template object is split into specific sections through top-level properties (resources, parameters, mappings, and outputs).
+3. The things we’re actually interested in are object children of those top-level objects, and the keys (‘logical IDs’ in CloudFormation terms) must be unique across each of the four sections.
+4. Resources, parameters, and the like are just JSON Objects.
+5. CloudFormation provides what it calls ‘Intrinsic Functions’, e.g. `Fn::Ref` to define links and dependencies between your resources.
+6. Because a template is just a JSON object, it’s very easy to accidentally define a resource or parameter with the same logical id more than once, which results in a last-one-wins situation where the object defined latest in the file will obliterate the previously defined one.
+
+Cumuliform provides DSL methods to define objects in each of the four sections, helps catch any duplicate logical IDs and provides wrappers for CloudFormation’s Intrinsic Functions that enforce referential integrity *before* you upload your template and start creating a stack with it.
+
+## The simplest possible template
+
+Let’s define a very simple template consisting of one resource and one parameter
 
 ```ruby
 Cumuliform.template do
-  resource "MyInstance" do
+  parameter 'AMI' do
+    {
+      Description: 'The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)',
+      Type: 'String',
+      Default: 'ami-accff2b1'
+    }
+  end
+
+  resource 'MyInstance' do
     {
       Type: 'AWS::EC2::Instance',
-      ...
+      Properties: {
+        ImageId: ref('AMI'),
+        InstanceType: 'm3.medium'
+      }
     }
   end
 end
 ```
 
-and add a Rake file task like this:
+Now we have a simple template we need a way to execute it. There are two things that need to happen. First, we have to evaluate the template, and second we need to generate its JSON output so we can use it.
+
+Taking the example `Rakefile` from `examples/Rakefile`, then the first part involves `eval()`ing the template source (the `.rb` file). We suggest that your template files contain a single template and return it, i.e. the last line in the template evaluates to the result of calling `Cumuliform.template`. If the template source returns the template instance then we simply assign the result of eval to a variable (e.g. `template = eval(File.read(t.source), binding, t.source)`).
+
+Once we have the template assigned to a variable, simply call `to_json` on it to generate the final CloudFormation JSON template.
+
 
 ```ruby
+require 'cumuliform'
+
 rule ".cform" => ".rb" do |t|
   template = eval(File.read(t.source), binding, t.source)
   File.open(t.name, 'w:utf-8') { |f| f.write(template.to_json) }
 end
 ```
 
-The task reads and `eval`s the source `template.rb` template, the template returns a new `Cumuliform::Template` instance, and then calls its `to_json` method and writes the result to `template.cform`
+Running the ruby source through the process gives us this JSON template:
 
-## Development
+
+```json
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "m3.medium"
+      }
+    }
+  }
+}
+```
+
+# Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `bin/console` for an interactive prompt that will allow you to experiment.
 

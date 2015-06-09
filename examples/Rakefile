@@ -1,0 +1,6 @@
+require 'cumuliform'
+
+rule ".cform" => ".rb" do |t|
+  template = eval(File.read(t.source), binding, t.source)
+  File.open(t.name, 'w:utf-8') { |f| f.write(template.to_json) }
+end
