@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{DSL library for generating AWS CloudFormation templates}
   spec.description   = <<-EOD
-Simple DSL for generation AWS CloudFormation templates with an emphasis
+Simple DSL for generating AWS CloudFormation templates with an emphasis
 on ensuring you don't shoot yourself in the foot by, e.g. referencing
 non-existent resources because you have a typo.
   EOD
