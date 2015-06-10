@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'cumuliform/runner'
+
+Cumuliform::Runner.process(ARGV[0], ARGV[1])
