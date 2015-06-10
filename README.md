@@ -125,21 +125,23 @@ $ cumuliform simplest.rb simplest.cform
 Cumuliform provides a very simple command-line runner to turn a `.rb` template
 into JSON:
 
-```sh $ cumuliform /path/to/input_template.rb /path/to/output_template.json ```
+```sh
+$ cumuliform /path/to/input_template.rb /path/to/output_template.json
+```
 
 It also provides a Rake task generator to create a Rake `rule` task to turn
 `x.rb` into `x.cform`:
 
-```
-ruby require 'cumuliform/rake_task'
+```ruby
+require 'cumuliform/rake_task'
 
 Cumuliform::RakeTask.rule '.cform' => '.rb'
 ```
 
 To transform `filename.rb` into `filename.cform`:
 
-```
-sh $ rake filename.cform
+```sh
+$ rake filename.cform
 ```
 
 If you haven't used Rake's `rule` tasks before, this [Rake rules article from
@@ -153,8 +155,8 @@ targets (CloudFormation templates you want to generate) based on your sources
 (Ruby Cumuliform template files). `rake cform` will transform all `.rb` files
 in the same dir as your `Rakefile` into the corresponding `.cform` files:
 
-```
-ruby require 'cumuliform/rake_task'
+```ruby
+require 'cumuliform/rake_task'
 
 Cumuliform::RakeTask.rule '.cform' => '.rb'
 
