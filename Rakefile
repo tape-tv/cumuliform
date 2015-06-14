@@ -14,4 +14,5 @@ require 'cumuliform/rake_task'
 
 Cumuliform::RakeTask.rule(".cform" => ".rb")
 
+desc "Generate JSON from example templates"
 task :examples => EXAMPLE_TARGETS
