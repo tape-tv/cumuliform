@@ -120,6 +120,8 @@ $ cumuliform simplest.rb simplest.cform
 }
 ```
 
+More detailed examples are below the section on Rake...
+
 # Rake tasks and the Command Line runner
 
 Cumuliform provides a very simple command-line runner to turn a `.rb` template
@@ -164,6 +166,123 @@ TARGETS = Rake::FileList['*.rb'].ext('.cform')
 
 task :cform => TARGETS
 ```
+
+# Examples
+
+## Simple top-level object declarations
+
+This example declares one of each of the top level objects Cumuliform
+supports. More details can be found in CloudFormation's [Template
+Anatomy documentation][cf-ta].
+
+[cf-ta]: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html
+
+```ruby
+Cumuliform.template do
+  # See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+  parameter 'AMI' do
+    {
+      Description: 'The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)',
+      Type: 'String',
+      Default: 'ami-accff2b1'
+    }
+  end
+
+  # See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/mappings-section-structure.html
+  mapping 'RegionAMI' do
+    {
+      'eu-central-1' => {
+        'hvm' => 'ami-accff2b1',
+        'pv' => 'ami-b6cff2ab'
+      },
+      'eu-west-1' => {
+        'hvm' => 'ami-47a23a30',
+        'pv' => 'ami-5da23a2a'
+      }
+    }
+  end
+
+  # See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/conditions-section-structure.html
+  condition 'Ireland' do
+    fn.equals(ref('AWS::Region'), 'eu-west-1')
+  end
+
+  # See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+  resource 'PrimaryInstance' do
+    {
+      Type: 'AWS::EC2::Instance',
+      Properties: {
+        ImageId: ref('AMI'),
+        InstanceType: 'm3.medium'
+      }
+    }
+  end
+
+  # See http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+  output 'PrimaryInstanceID' do
+    {
+      Value: ref('PrimaryInstance')
+    }
+  end
+end
+```
+
+The generated template is:
+
+```json
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    }
+  },
+  "Mappings": {
+    "RegionAMI": {
+      "eu-central-1": {
+        "hvm": "ami-accff2b1",
+        "pv": "ami-b6cff2ab"
+      },
+      "eu-west-1": {
+        "hvm": "ami-47a23a30",
+        "pv": "ami-5da23a2a"
+      }
+    }
+  },
+  "Conditions": {
+    "Ireland": {
+      "Fn::Equals": [
+        {
+          "Ref": "AWS::Region"
+        },
+        "eu-west-1"
+      ]
+    }
+  },
+  "Resources": {
+    "PrimaryInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "m3.medium"
+      }
+    }
+  },
+  "Outputs": {
+    "PrimaryInstanceID": {
+      "Value": {
+        "Ref": "PrimaryInstance"
+      }
+    }
+  }
+}
+```
+
+Note that the optional `AWSTemplateFormatVersion`, `Description`, and
+`Metadata` sections are *not* currently supported.
 
 # Development
 
