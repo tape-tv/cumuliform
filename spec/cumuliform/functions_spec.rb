@@ -278,6 +278,20 @@ describe "CloudFormation Intrinsic functions" do
         expect { template.fn.select(2, ["a"]) }.to raise_error(IndexError)
       end
 
+      it "allows a Fn::Ref experession for index and doesn't check constraints" do
+        template.resource "Res" do
+          {k: fn.select({"Fn::Ref" => "SomeParameter"}, ["a", "b"])}
+        end
+
+        expect(template.to_hash['Resources']).to eq(
+          {
+            "Res" => {
+              k: {"Fn::Select" => [{"Fn::Ref" => "SomeParameter"}, ["a", "b"]]}
+            }
+          }
+        )
+      end
+
       it "doesn't check lenth constraints on non-array-literal array args (e.g. ref())" do
         template.resource "Res" do
           {k: fn.select(2, {"Fn::Ref" => "SomeAttr"})}
