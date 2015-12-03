@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Changed
+- Internal refactor of code / file structure to more clearly separate DSL and
+  domain objects
+
 ## [0.5.1] - 2015-12-03
 ### Changed
 - Make some fragment-related functions private
