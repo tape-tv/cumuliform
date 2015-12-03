@@ -25,11 +25,13 @@ module Cumuliform
     # @param name [Symbol] The name of the fragment to use
     # @param opts [Hash] Options to be passed to the fragment
     # @return [Object<JSON-serialisable>] the return value of the called block
-    def fragment(name, opts = {})
-      unless has_fragment?(name)
-        raise Error::FragmentNotFound, name
+    def fragment(name, *args, &block)
+      if block_given?
+        warn "fragment definition form (with block) is deprecated. Use #def_fragment instead"
+        def_fragment(name, *args, &block)
+      else
+        use_fragment(name, *args)
       end
-      instance_exec(opts, &find_fragment(name))
     end
 
     # @api private
@@ -41,6 +43,14 @@ module Cumuliform
     end
 
     private
+
+    def use_fragment(name, opts = {})
+      unless has_fragment?(name)
+        raise Error::FragmentNotFound, name
+      end
+      instance_exec(opts, &find_fragment(name))
+    end
+
 
     def fragments
       @fragments ||= {}
