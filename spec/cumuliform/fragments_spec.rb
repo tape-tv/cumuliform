@@ -9,7 +9,7 @@ describe "Template fragments" do
         {key: "value"}
       end
 
-      expect(template.fragments[:frag].call).to eq({key: "value"})
+      expect(template.find_fragment(:frag).call).to eq({key: "value"})
     end
   end
 
