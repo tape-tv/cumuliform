@@ -284,6 +284,422 @@ The generated template is:
 Note that the optional `AWSTemplateFormatVersion`, `Description`, and
 `Metadata` sections are *not* currently supported.
 
+## Intrinsic functions
+
+Cumuliform provides convenience wrappers for all the intrinsic functions. See
+CloudFormation's [Intrinsic Function documentation][cf-if].
+
+[cf-if]: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html
+
+```ruby
+Cumuliform.template do
+  mapping 'RegionAMI' do
+    {
+      'eu-central-1' => {
+        'hvm' => 'ami-accff2b1',
+        'pv' => 'ami-b6cff2ab'
+      },
+      'eu-west-1' => {
+        'hvm' => 'ami-47a23a30',
+        'pv' => 'ami-5da23a2a'
+      }
+    }
+  end
+
+  parameter 'VirtualizationMethod' do
+    {
+      Type: 'String',
+      Default: 'hvm'
+    }
+  end
+
+  resource 'PrimaryInstance' do
+    {
+      Type: 'AWS::EC2::Instance',
+      Properties: {
+        ImageId: fn.find_in_map('RegionAMI', ref('AWS::Region'),
+                                ref('VirtualizationMethod')),
+        InstanceType: 'm3.medium',
+        AvailabilityZone: fn.select(0, fn.get_azs),
+        UserData: fn.base64(
+          fn.join('', [
+            "#!/bin/bash -xe\n",
+            "apt-get update\n",
+            "apt-get -y install python-pip python-docutils\n",
+            "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+            "/usr/local/bin/cfn-init",
+            " --region ", ref("AWS::Region"),
+            " --stack ", ref("AWS::StackId"),
+            " --resource #{xref('PrimaryInstance')}",
+            " --configsets db"
+          ])
+        ),
+        Metadata: {
+          'AWS::CloudFormation::Init' => {
+            configSets: { db: ['install'] },
+            install: {
+              commands: {
+                '01-apt' => {
+                  command: 'apt-get install postgresql postgresql-contrib'
+                },
+                '02-db' => {
+                  command: 'sudo -u postgres createdb the-db'
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  end
+
+  resource 'SiteDNS' do
+    {
+      Type: "AWS::Route53::RecordSet",
+      Properties: {
+        HostedZoneName: 'my-zone.example.org',
+        Name: 'service.my-zone.example.org',
+        ResourceRecords: [fn.get_att(xref('LoadBalancer'), 'DNSName')],
+        TTL: '900',
+        Type: 'CNAME'
+      }
+    }
+  end
+
+  resource 'LoadBalancer' do
+    {
+      Type: 'AWS::ElasticLoadBalancing::LoadBalancer',
+      Properties: {
+        AvailabilityZones: [fn.select(0, fn.get_azs)],
+        Listeners: [
+          {
+            InstancePort: 5432,
+            Protocol: 'TCP'
+          }
+        ],
+        Instances: [ref('PrimaryInstance')]
+      }
+    }
+  end
+end
+```
+
+The generated template is:
+
+```json
+{
+  "Parameters": {
+    "VirtualizationMethod": {
+      "Type": "String",
+      "Default": "hvm"
+    }
+  },
+  "Mappings": {
+    "RegionAMI": {
+      "eu-central-1": {
+        "hvm": "ami-accff2b1",
+        "pv": "ami-b6cff2ab"
+      },
+      "eu-west-1": {
+        "hvm": "ami-47a23a30",
+        "pv": "ami-5da23a2a"
+      }
+    }
+  },
+  "Resources": {
+    "PrimaryInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionAMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Ref": "VirtualizationMethod"
+            }
+          ]
+        },
+        "InstanceType": "m3.medium",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                "apt-get update\n",
+                "apt-get -y install python-pip python-docutils\n",
+                "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+                "/usr/local/bin/cfn-init",
+                " --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                " --stack ",
+                {
+                  "Ref": "AWS::StackId"
+                },
+                " --resource PrimaryInstance",
+                " --configsets db"
+              ]
+            ]
+          }
+        },
+        "Metadata": {
+          "AWS::CloudFormation::Init": {
+            "configSets": {
+              "db": [
+                "install"
+              ]
+            },
+            "install": {
+              "commands": {
+                "01-apt": {
+                  "command": "apt-get install postgresql postgresql-contrib"
+                },
+                "02-db": {
+                  "command": "sudo -u postgres createdb the-db"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "SiteDNS": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneName": "my-zone.example.org",
+        "Name": "service.my-zone.example.org",
+        "ResourceRecords": [
+          {
+            "Fn::GetAtt": [
+              "LoadBalancer",
+              "DNSName"
+            ]
+          }
+        ],
+        "TTL": "900",
+        "Type": "CNAME"
+      }
+    },
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "AvailabilityZones": [
+          {
+            "Fn::Select": [
+              "0",
+              {
+                "Fn::GetAZs": ""
+              }
+            ]
+          }
+        ],
+        "Listeners": [
+          {
+            "InstancePort": 5432,
+            "Protocol": "TCP"
+          }
+        ],
+        "Instances": [
+          {
+            "Ref": "PrimaryInstance"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+## Condition functions
+
+Cumuliform provides convenience wrappers for all the Condition-related intrinsic functions. See
+CloudFormation's [Condition Function documentation][cf-cif].
+
+[cf-cif]: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html
+
+```ruby
+Cumuliform.template do
+  parameter 'AMI' do
+    {
+      Type: 'String',
+      Default: 'ami-12345678'
+    }
+  end
+
+  parameter 'UtilAMI' do
+    {
+      Type: 'String',
+      Default: 'ami-abcdef12'
+    }
+  end
+
+  parameter 'InstanceType' do
+    {
+      Description: "The instance type",
+      Type: 'String',
+      Default: 'c4.large'
+    }
+  end
+
+  condition 'InEU' do
+    fn.or(
+      fn.equals('eu-central-1', ref('AWS::Region')),
+      fn.equals('eu-west-1', ref('AWS::Region'))
+    )
+  end
+
+  condition 'UtilBox' do
+    fn.and(
+      fn.equals('m4.large', ref('InstanceType')),
+      {"Condition": xref('InEU')}
+    )
+  end
+
+  condition 'WebBox' do
+    fn.not(ref('UtilBox'))
+  end
+
+  resource 'WebInstance' do
+    {
+      Type: "AWS::EC2::Instance",
+      Condition: xref('WebBox'),
+      Properties: {
+        ImageId: ref('AMI'),
+        InstanceType: ref('InstanceType')
+      }
+    }
+  end
+
+  resource 'UtilInstance' do
+    {
+      Type: "AWS::EC2::Instance",
+      Condition: xref('UtilBox'),
+      Properties: {
+        ImageId: ref('UtilAMI'),
+        InstanceType: ref('InstanceType')
+      }
+    }
+  end
+end
+```
+
+The generated template is:
+
+```json
+{
+  "Parameters": {
+    "AMI": {
+      "Type": "String",
+      "Default": "ami-12345678"
+    },
+    "UtilAMI": {
+      "Type": "String",
+      "Default": "ami-abcdef12"
+    },
+    "InstanceType": {
+      "Description": "The instance type",
+      "Type": "String",
+      "Default": "c4.large"
+    }
+  },
+  "Conditions": {
+    "InEU": {
+      "Fn::Or": [
+        {
+          "Fn::Equals": [
+            "eu-central-1",
+            {
+              "Ref": "AWS::Region"
+            }
+          ]
+        },
+        {
+          "Fn::Equals": [
+            "eu-west-1",
+            {
+              "Ref": "AWS::Region"
+            }
+          ]
+        }
+      ]
+    },
+    "UtilBox": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            "m4.large",
+            {
+              "Ref": "InstanceType"
+            }
+          ]
+        },
+        {
+          "Condition": "InEU"
+        }
+      ]
+    },
+    "WebBox": {
+      "Fn::Not": [
+        {
+          "Ref": "UtilBox"
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "WebInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Condition": "WebBox",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    },
+    "UtilInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Condition": "UtilBox",
+      "Properties": {
+        "ImageId": {
+          "Ref": "UtilAMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    }
+  }
+}
+```
+
+### xref
+_TODO_
+
+## Fragments
+_TODO_
+
+## Importing other templates
+_TODO_
+
+## Helpers
+_TODO_
+
+
 # Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run

@@ -251,6 +251,137 @@ describe "CloudFormation Intrinsic functions" do
       end
     end
 
+    context "Fn::And" do
+      it "creates And Conditions with and" do
+        template.resource("Res") { {Type: "Bogus"} }
+        template.condition "Cond" do
+          fn.and(
+            {"Condition" => "AnotherCondition"},
+            {"Condition" => "YACondition"}
+          )
+        end
+
+        expect(template.to_hash['Conditions']).to eq({
+          "Cond" => {
+            "Fn::And" => [
+              {"Condition" => "AnotherCondition"},
+              {"Condition" => "YACondition"}
+            ]
+          }
+        })
+      end
+
+      it "explodes given only one arg" do
+        expect { template.fn.and({"Condition" => "Cond"}) }.to raise_error(ArgumentError)
+      end
+
+      it "explodes given more than 10 args" do
+        expect { template.fn.and(
+          {"Condition" => "Cond1"},
+          {"Condition" => "Cond2"},
+          {"Condition" => "Cond3"},
+          {"Condition" => "Cond4"},
+          {"Condition" => "Cond5"},
+          {"Condition" => "Cond6"},
+          {"Condition" => "Cond7"},
+          {"Condition" => "Cond8"},
+          {"Condition" => "Cond9"},
+          {"Condition" => "Cond10"},
+          {"Condition" => "Cond11"}
+        ) }.to raise_error(ArgumentError)
+      end
+
+      it "10 args are fine" do
+        expect { template.fn.and(
+          {"Condition" => "Cond1"},
+          {"Condition" => "Cond2"},
+          {"Condition" => "Cond3"},
+          {"Condition" => "Cond4"},
+          {"Condition" => "Cond5"},
+          {"Condition" => "Cond6"},
+          {"Condition" => "Cond7"},
+          {"Condition" => "Cond8"},
+          {"Condition" => "Cond9"},
+          {"Condition" => "Cond10"}
+        ) }.not_to raise_error
+      end
+    end
+
+    context "Fn::Or" do
+      it "creates And Conditions with and" do
+        template.resource("Res") { {Type: "Bogus"} }
+        template.condition "Cond" do
+          fn.or(
+            {"Condition" => "AnotherCondition"},
+            {"Condition" => "YACondition"}
+          )
+        end
+
+        expect(template.to_hash['Conditions']).to eq({
+          "Cond" => {
+            "Fn::Or" => [
+              {"Condition" => "AnotherCondition"},
+              {"Condition" => "YACondition"}
+            ]
+          }
+        })
+      end
+
+      it "explodes given only one arg" do
+        expect { template.fn.or({"Condition" => "Cond"}) }.to raise_error(ArgumentError)
+      end
+
+      it "explodes given more than 10 args" do
+        expect { template.fn.or(
+          {"Condition" => "Cond1"},
+          {"Condition" => "Cond2"},
+          {"Condition" => "Cond3"},
+          {"Condition" => "Cond4"},
+          {"Condition" => "Cond5"},
+          {"Condition" => "Cond6"},
+          {"Condition" => "Cond7"},
+          {"Condition" => "Cond8"},
+          {"Condition" => "Cond9"},
+          {"Condition" => "Cond10"},
+          {"Condition" => "Cond11"}
+        ) }.to raise_error(ArgumentError)
+      end
+
+      it "10 args are fine" do
+        expect { template.fn.or(
+          {"Condition" => "Cond1"},
+          {"Condition" => "Cond2"},
+          {"Condition" => "Cond3"},
+          {"Condition" => "Cond4"},
+          {"Condition" => "Cond5"},
+          {"Condition" => "Cond6"},
+          {"Condition" => "Cond7"},
+          {"Condition" => "Cond8"},
+          {"Condition" => "Cond9"},
+          {"Condition" => "Cond10"}
+        ) }.not_to raise_error
+      end
+    end
+
+    context "Fn::Not" do
+      it "creates Not Condition" do
+        template.resource("Res") { {Type: "Bogus"} }
+        template.condition "Cond" do
+          fn.not(
+            {"Condition" => "AnotherCondition"}
+          )
+        end
+
+        expect(template.to_hash['Conditions']).to eq({
+          "Cond" => {
+            "Fn::Not" => [
+              {"Condition" => "AnotherCondition"}
+            ]
+          }
+        })
+      end
+    end
+
     context "Fn::Select" do
       it "generates the correct output" do
         template.resource "Res" do

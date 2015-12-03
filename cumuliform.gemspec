@@ -26,4 +26,5 @@ non-existent resources because you have a typo.
   spec.add_development_dependency "bundler", "~> 1.9"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3"
+  spec.add_development_dependency "yard", ">= 0.8"
 end

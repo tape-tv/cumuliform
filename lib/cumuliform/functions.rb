@@ -143,6 +143,46 @@ module Cumuliform
         end
         {"Fn::Select" => [index, array]}
       end
+
+      # Wraps Fn::And
+      #
+      # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86066
+      #
+      # Behaves as a logical AND operator for CloudFormation conditions. Arguments should be other conditions or things that will evaluate to <tt>true</tt> or <tt>false</tt>.
+      #
+      # @param condition_1 [Hash<boolean-returning ref, intrinsic function, or condition>] Condition / value to be ANDed
+      # @param condition_n [Hash<boolean-returning ref, intrinsic function, or condition>] Condition / value to be ANDed (min 2, max 10 condition args)
+      def and(*conditions)
+        unless (2..10).cover?(conditions.length)
+          raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
+        end
+        {"Fn::And" => conditions}
+      end
+
+      # Wraps Fn::Or
+      #
+      # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86490
+      #
+      # Behaves as a logical OR operator for CloudFormation conditions. Arguments should be other conditions or things that will evaluate to <tt>true</tt> or <tt>false</tt>.
+      #
+      # @param condition_1 [Hash<boolean-returning ref, intrinsic function, or condition>] Condition / value to be ORed
+      # @param condition_n [Hash<boolean-returning ref, intrinsic function, or condition>] Condition / value to be ORed (min 2, max 10 condition args)
+      def or(*conditions)
+        unless (2..10).cover?(conditions.length)
+          raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
+        end
+        {"Fn::Or" => conditions}
+      end
+
+      # Wraps Fn::Not
+      #
+      # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86402
+      #
+      # Behaves as a logical NOT operator for CloudFormation conditions. The argument should be another condition or something that will evaluate to <tt>true</tt> or <tt>false</tt>
+        # @param condition [Hash<boolean-returning ref, intrinsic function, or condition>] Condition / value to be NOTed
+      def not(condition)
+        {"Fn::Not" => [condition]}
+      end
     end
 
     # Checks <tt>logical_id</tt> is present and either returns <tt>logical_id</tt> or raises
