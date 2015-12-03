@@ -29,7 +29,7 @@ describe "Template importing" do
 
     it "does NOT preserve the defining context when referring to fragments" do
       base_template = Cumuliform.template {
-        fragment(:ref) { "Hello" }
+        def_fragment(:ref) { "Hello" }
 
         resource("Eg") do
           fragment(:ref)
@@ -39,7 +39,7 @@ describe "Template importing" do
       importing_template = Cumuliform.template {
         import base_template
 
-        fragment(:ref) { "Value" }
+        def_fragment(:ref) { "Value" }
       }
 
       expect(importing_template.to_hash).to eq({"Resources" => {"Eg" => "Value"}})
@@ -75,7 +75,7 @@ describe "Template importing" do
   context "fragments" do
     it "gives access to an imported fragment" do
       base_template = Cumuliform.template {
-        fragment(:eg) {
+        def_fragment(:eg) {
           "Value"
         }
       }
@@ -93,8 +93,8 @@ describe "Template importing" do
 
     it "finds imported fragments when other fragments are referred" do
       base_template = Cumuliform.template {
-        fragment(:ref) { "hey" }
-        fragment(:eg) {
+        def_fragment(:ref) { "hey" }
+        def_fragment(:eg) {
           {k: fragment(:ref)}
         }
       }
@@ -112,8 +112,8 @@ describe "Template importing" do
 
     it "does NOT preserve the defining context when fragments ref other fragments" do
       base_template = Cumuliform.template {
-        fragment(:ref) { "hey" }
-        fragment(:eg) {
+        def_fragment(:ref) { "hey" }
+        def_fragment(:eg) {
           {k: fragment(:ref)}
         }
       }
@@ -121,7 +121,7 @@ describe "Template importing" do
       importing_template = Cumuliform.template {
         import base_template
 
-        fragment(:ref) { "ho" }
+        def_fragment(:ref) { "ho" }
         resource("Eg") do
           fragment(:eg)
         end

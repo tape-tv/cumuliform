@@ -5,7 +5,7 @@ describe "Template fragments" do
 
   context "definition" do
     it "allows a fragment to be defined" do
-      template.fragment :frag do
+      template.def_fragment :frag do
         {key: "value"}
       end
 
@@ -15,7 +15,7 @@ describe "Template fragments" do
 
   context "inclusion" do
     it "allows a fragment to be included" do
-      template.fragment :frag do
+      template.def_fragment :frag do
         {key: "value"}
       end
 
@@ -29,7 +29,7 @@ describe "Template fragments" do
     end
 
     it "correctly handles deferred execution like ref()" do
-      template.fragment :frag do
+      template.def_fragment :frag do
         {key: ref("Param")}
       end
 
@@ -45,7 +45,7 @@ describe "Template fragments" do
     end
 
     it "allows arguments to be passed to the block" do
-      template.fragment :frag do |arg|
+      template.def_fragment :frag do |arg|
         {key: arg}
       end
 
@@ -61,9 +61,9 @@ describe "Template fragments" do
 
   context "housekeeping" do
     it "does not allow a fragment name collision" do
-      template.fragment(:frag) { "Value" }
+      template.def_fragment(:frag) { "Value" }
 
-      expect { template.fragment(:frag) { "Other value" } }.to raise_error(
+      expect { template.def_fragment(:frag) { "Other value" } }.to raise_error(
         Cumuliform::Error::FragmentAlreadyDefined
       )
     end
@@ -81,7 +81,7 @@ describe "Template fragments" do
     context "without explicit options declared" do
       it "works with no args passed" do
         template = Cumuliform.template {
-          fragment(:ref) { "hey" }
+          def_fragment(:ref) { "hey" }
           resource("Eg") do
             fragment(:ref)
           end
@@ -92,7 +92,7 @@ describe "Template fragments" do
 
       it "works with args passed" do
         template = Cumuliform.template {
-          fragment(:ref) { "hey" }
+          def_fragment(:ref) { "hey" }
           resource("Eg") do
             fragment(:ref, hello: "mum")
           end
@@ -105,7 +105,7 @@ describe "Template fragments" do
     context "with explicit options declared" do
       it "works with no args passed" do
         template = Cumuliform.template {
-          fragment(:ref) { |opts| "hey #{opts[:hello]}".strip }
+          def_fragment(:ref) { |opts| "hey #{opts[:hello]}".strip }
           resource("Eg") do
             fragment(:ref)
           end
@@ -116,7 +116,7 @@ describe "Template fragments" do
 
       it "works with args passed" do
         template = Cumuliform.template {
-          fragment(:ref) { |opts| "hey #{opts[:hello]}".strip }
+          def_fragment(:ref) { |opts| "hey #{opts[:hello]}".strip }
           resource("Eg") do
             fragment(:ref, hello: "there")
           end

@@ -704,7 +704,72 @@ end
 ```
 
 ## Fragments
-_TODO_
+You'll often want to use a collection of resources several times in a template, and it can be pretty verbose and tedious. Cumuliform offers reusable fragments to allow you to reuse similar template chunks.
+
+You define them with `def_fragment()` and use them with `fragment()`. You pass a name and a block to `def_fragment`. You call `fragment()` with the name of a fragment and an optional hash of options to pass to the fragment block. The fragment block is called and its return value output into the template.
+
+Here's an example:
+
+```ruby
+Cumuliform.template do
+  parameter 'AMI' do
+    {
+      Description: 'The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)',
+      Type: 'String',
+      Default: 'ami-accff2b1'
+    }
+  end
+
+  def_fragment(:instance) do |opts|
+    resource opts[:logical_id] do
+      {
+        Type: 'AWS::EC2::Instance',
+        Properties: {
+          ImageId: ref('AMI'),
+          InstanceType: opts[:instance_type]
+        }
+      }
+    end
+  end
+
+  fragment(:instance, logical_id: 'LittleInstance', instance_type: 't2.micro')
+  fragment(:instance, logical_id: 'BigInstance', instance_type: 'c4.xlarge')
+end
+```
+
+And the output:
+
+```json
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    }
+  },
+  "Resources": {
+    "LittleInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "t2.micro"
+      }
+    },
+    "BigInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "c4.xlarge"
+      }
+    }
+  }
+}
+```
 
 ## Importing other templates
 _TODO_

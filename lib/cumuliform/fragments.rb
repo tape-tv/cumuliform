@@ -6,12 +6,18 @@ module Cumuliform
       @fragments ||= {}
     end
 
-    def fragment(name, *args, &block)
-      if block_given?
-        define_fragment(name, block)
-      else
-        include_fragment(name, *args)
+    def def_fragment(name, &block)
+      if fragments.has_key?(name)
+        raise Error::FragmentAlreadyDefined, name
       end
+      fragments[name] = block
+    end
+
+    def fragment(name, opts = {})
+      unless has_fragment?(name)
+        raise Error::FragmentNotFound, name
+      end
+      instance_exec(opts, &find_fragment(name))
     end
 
     def find_fragment(name)
@@ -23,22 +29,6 @@ module Cumuliform
 
     def has_fragment?(name)
       !find_fragment(name).nil?
-    end
-
-    private
-
-    def define_fragment(name, block)
-      if fragments.has_key?(name)
-        raise Error::FragmentAlreadyDefined, name
-      end
-      fragments[name] = block
-    end
-
-    def include_fragment(name, opts = {})
-      unless has_fragment?(name)
-        raise Error::FragmentNotFound, name
-      end
-      instance_exec(opts, &find_fragment(name))
     end
   end
 end
