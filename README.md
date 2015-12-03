@@ -688,7 +688,20 @@ The generated template is:
 ```
 
 ### xref
-_TODO_
+Quite often you'll need to use a Resource, Condition, or Parameter Logical ID
+outside of a `{ "Ref" => "LogicalID" }`. Because Logical IDs are one of the
+things we *can* check at evaluation time, we provide a function that simply
+takes a Logical ID, checks it, then returns it. If the Logical ID isn't there
+then it explodes with a `Cumuliform::Error::NoSuchLogicalId`.
+
+```ruby
+resource "Resource" do
+  {
+    Type: "AWS::EC2::Instance",
+    Condition: xref("TheCondition")
+  }
+end
+```
 
 ## Fragments
 _TODO_
