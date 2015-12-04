@@ -2,7 +2,6 @@
 # DSLize every last thing. Simple is the watch word
 
 require 'json'
-require 'set'
 
 module Cumuliform
   module Output
