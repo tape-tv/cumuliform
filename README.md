@@ -772,7 +772,290 @@ And the output:
 ```
 
 ## Importing other templates
-_TODO_
+If you want to share complete resources, or fragments, between different
+templates then you can import one template into another. All the imported
+template's resources will be available to you, and you can override template
+parts (i.e. a parameter) or even fragments simply be defining them again in the
+importing template.
+
+To import a template, you simply `require` it as you would any other ruby file,
+and then use Cumuliform's `import` method to import it.
+
+This is easier to explain with an example. Take this very simple example,
+defining a single `AWS::EC2::Instance` in a `resource`, and a `parameter` that
+controls the AMI it uses:
+
+```ruby
+BaseTemplate = Cumuliform.template do
+  parameter 'AMI' do
+    {
+      Description: 'The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)',
+      Type: 'String',
+      Default: 'ami-accff2b1'
+    }
+  end
+
+  resource 'MyInstance' do
+    {
+      Type: 'AWS::EC2::Instance',
+      Properties: {
+        ImageId: ref('AMI'),
+        InstanceType: 'm3.medium'
+      }
+    }
+  end
+end
+```
+
+It generates the following JSON (as expected):
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "The AMI id for our template (defaults to the stock Ubuntu 14.04 image in eu-central-1)",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "m3.medium"
+      }
+    }
+  }
+}
+```
+
+Say we to change the default AMI parameter but reuse everything else. We can
+import that template and redefine the `parameter`:
+
+```ruby
+require_relative './import-base.rb'
+
+Cumuliform.template do
+  import BaseTemplate
+
+  parameter 'AMI' do
+    {
+      Description: 'A different AMI',
+      Type: 'String',
+      Default: 'ami-DIFFERENT'
+    }
+  end
+end
+```
+
+That produces the following JSON:
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "A different AMI",
+      "Type": "String",
+      "Default": "ami-DIFFERENT"
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": "m3.medium"
+      }
+    }
+  }
+}
+```
+
+There are a couple of very important points to note: First, we have to
+`require` the base template (exactly as you require any ruby file). Second, we
+have to assign the result of calling `Cumuliform.template` to a constant so
+that it is available once we've required the file.
+
+In the importing template, once we have `require`d the base template, we pass
+the constant containing the base template to the `import` DSL method.
+
+## Importing fragments
+Fragments defined in a template are also available when imported. You can
+override fragments in the importing template as you would override a resource.
+
+Here's a base template that defines several fragments (shown with the JSON it
+generates).
+
+```ruby
+FragmentBaseTemplate = Cumuliform.template do
+  def_fragment(:ami_param) do |opts|
+    parameter 'AMI' do
+      {
+        Description: 'AMI id',
+        Type: 'String',
+        Default: opts[:ami_id]
+      }
+    end
+  end
+
+  def_fragment(:instance_type) do |opts|
+    parameter 'InstanceType' do
+      {
+        Description: 'InstanceType',
+        Type: 'String',
+        Default: opts[:type],
+        AllowedValues: ['t2.small', 't2.medium', 't2.large']
+      }
+    end
+  end
+
+  def_fragment(:instance) do |opts|
+    resource 'MyInstance' do
+      {
+        Type: 'AWS::EC2::Instance',
+        Properties: {
+          ImageId: ref('AMI'),
+          InstanceType: ref('InstanceType')
+        }
+      }
+    end
+  end
+
+  fragment(:ami_param, ami_id: 'ami-accff2b1')
+  fragment(:instance_type, type: 't2.medium')
+  fragment(:instance)
+end
+```
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "AMI id",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    },
+    "InstanceType": {
+      "Description": "InstanceType",
+      "Type": "String",
+      "Default": "m4.medium",
+      "AllowedValues": [
+        "t2.small",
+        "t2.medium",
+        "t2.large"
+      ]
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    }
+  }
+}
+```
+
+An importing template can use, or override, the fragments exactly as with any
+other resource:
+
+```ruby
+require_relative './import-fragments-base.rb'
+
+Cumuliform.template do
+  import FragmentBaseTemplate
+
+  def_fragment(:instance_type) do |opts|
+    parameter 'InstanceType' do
+      {
+        Description: 'InstanceType',
+        Type: 'String',
+        Default: opts[:type],
+        AllowedValues: ['m3.medium', 'm4.large', 'm4.xlarge']
+      }
+    end
+  end
+
+  fragment(:instance_type, type: 'm3.medium')
+end
+```
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "AMI id",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    },
+    "InstanceType": {
+      "Description": "InstanceType",
+      "Type": "String",
+      "Default": "m3.medium",
+      "AllowedValues": [
+        "m3.medium",
+        "m4.large",
+        "m4.xlarge"
+      ]
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    }
+  }
+}
+```
+
+We redefined the fragment so the allowed values for instance type allowed the
+instance type we wanted to use. (Using the fragments in the base template is a
+bit weird, and not really recommended - it's included here to warn you...)
+
+
+## Assigning templates to constants, namespaces, and processing
+The `Cumuliform.template` method returns a template object directly. So, to
+make a template that can be imported into another template you need to assign
+it to a variable or constant.
+
+If you want to be able to directly process your base templates (instead of only
+using them by importing them into another template), then you also need to make
+sure your file returns the template when it's run. The runner works by
+`class_eval`ing your template file as a string and expecting that the result of
+that call will be an instance of `Cumuliform::Template`. If you use namespaces
+for your template objects (as you might if you have several base templates)
+then you need to be careful of that: the last line in your template must be
+something that returns the template. If you're nesting within modules, then the
+call to `module` will return `nil`, not the template. Instead, return the
+template as the last line:
+
+```
+module Stacks
+  Base = Cumuliform.template do
+    ...
+  end
+end
+
+Stacks::Base
+```
 
 ## Helpers
 _TODO_
