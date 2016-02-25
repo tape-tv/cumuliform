@@ -884,15 +884,161 @@ that it is available once we've required the file.
 In the importing template, once we have `require`d the base template, we pass
 the constant containing the base template to the `import` DSL method.
 
+## Importing fragments
+Fragments defined in a template are also available when imported. You can
+override fragments in the importing template as you would override a resource.
+
+Here's a base template that defines several fragments (shown with the JSON it
+generates).
+
+```ruby
+FragmentBaseTemplate = Cumuliform.template do
+  def_fragment(:ami_param) do |opts|
+    parameter 'AMI' do
+      {
+        Description: 'AMI id',
+        Type: 'String',
+        Default: opts[:ami_id]
+      }
+    end
+  end
+
+  def_fragment(:instance_type) do |opts|
+    parameter 'InstanceType' do
+      {
+        Description: 'InstanceType',
+        Type: 'String',
+        Default: opts[:type],
+        AllowedValues: ['t2.small', 't2.medium', 't2.large']
+      }
+    end
+  end
+
+  def_fragment(:instance) do |opts|
+    resource 'MyInstance' do
+      {
+        Type: 'AWS::EC2::Instance',
+        Properties: {
+          ImageId: ref('AMI'),
+          InstanceType: ref('InstanceType')
+        }
+      }
+    end
+  end
+
+  fragment(:ami_param, ami_id: 'ami-accff2b1')
+  fragment(:instance_type, type: 't2.medium')
+  fragment(:instance)
+end
+```
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "AMI id",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    },
+    "InstanceType": {
+      "Description": "InstanceType",
+      "Type": "String",
+      "Default": "m4.medium",
+      "AllowedValues": [
+        "t2.small",
+        "t2.medium",
+        "t2.large"
+      ]
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    }
+  }
+}
+```
+
+An importing template can use, or override, the fragments exactly as with any
+other resource:
+
+```ruby
+require_relative './import-fragments-base.rb'
+
+Cumuliform.template do
+  import FragmentBaseTemplate
+
+  def_fragment(:instance_type) do |opts|
+    parameter 'InstanceType' do
+      {
+        Description: 'InstanceType',
+        Type: 'String',
+        Default: opts[:type],
+        AllowedValues: ['m3.medium', 'm4.large', 'm4.xlarge']
+      }
+    end
+  end
+
+  fragment(:instance_type, type: 'm3.medium')
+end
+```
+
+```
+{
+  "Parameters": {
+    "AMI": {
+      "Description": "AMI id",
+      "Type": "String",
+      "Default": "ami-accff2b1"
+    },
+    "InstanceType": {
+      "Description": "InstanceType",
+      "Type": "String",
+      "Default": "m3.medium",
+      "AllowedValues": [
+        "m3.medium",
+        "m4.large",
+        "m4.xlarge"
+      ]
+    }
+  },
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AMI"
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    }
+  }
+}
+```
+
+We redefined the fragment so the allowed values for instance type allowed the
+instance type we wanted to use. (Using the fragments in the base template is a
+bit weird, and not really recommended - it's included here to warn you...)
+
+
 ## Assigning templates to constants, namespaces, and processing
-The `Cumuliform.template` method returns a template object, rather than
-anything too clever like registering the template with a class (or similar).
-This is why you can assign the template to a constant for importing into
-another template.
+The `Cumuliform.template` method returns a template object directly. So, to
+make a template that can be imported into another template you need to assign
+it to a variable or constant.
 
 If you want to be able to directly process your base templates (instead of only
 using them by importing them into another template), then you also need to make
-sure your file returns the template as the last line in it. The runner works by
+sure your file returns the template when it's run. The runner works by
 `class_eval`ing your template file as a string and expecting that the result of
 that call will be an instance of `Cumuliform::Template`. If you use namespaces
 for your template objects (as you might if you have several base templates)
