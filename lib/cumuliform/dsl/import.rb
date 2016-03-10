@@ -2,6 +2,7 @@ require_relative '../error'
 
 module Cumuliform
   module DSL
+    # DSL methods for importing other templates
     module Import
       # Import another Cumuliform::Template into this one
       #

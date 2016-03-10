@@ -2,8 +2,15 @@ require_relative '../error'
 
 module Cumuliform
   module DSL
+    # Contains DSL methods for including modules containing simple helper methods
+    #
+    # Helper methods are isolated from the template object, so they can't
+    # call other DSL methods. They're really intended for wrapping code that
+    # is used in several places but requires complex setup, for example a
+    # third-party API that issues tokens you need to include in your template
+    # in some way.
     module Helpers
-      # Add helper methods to the template
+      # Add helper methods to the template.
       #
       # @overload helpers(mod, ...)
       #   Include one or more helper modules
@@ -23,10 +30,12 @@ module Cumuliform
 
       protected
 
+      # @api private
       def has_helper?(meth)
         helpers_instance.respond_to?(meth)
       end
 
+      # @api private
       def template_for_helper(meth)
         return self if has_helper?(meth)
         imports.reverse.find { |template|
@@ -34,6 +43,7 @@ module Cumuliform
         }
       end
 
+      # @api private
       def send_helper(meth, *args)
         helpers_instance.send(meth, *args)
       end

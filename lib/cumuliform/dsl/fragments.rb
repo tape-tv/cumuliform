@@ -2,6 +2,7 @@ require_relative '../error'
 
 module Cumuliform
   module DSL
+    # DSL methods for creating and reusing template fragments
     module Fragments
       # Define a fragment for later use.
       #

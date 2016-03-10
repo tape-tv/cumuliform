@@ -2,13 +2,13 @@ require_relative '../error'
 
 module Cumuliform
   module DSL
+    # DSL methods for working with CloudFormation Intrinsic and Ref functions
     module Functions
       # implements wrappers for the intrinsic functions Fn::*
       class IntrinsicFunctions
         attr_reader :template
 
-        # @api private
-        def initialize(template)
+        def initialize(template) # :nodoc:
           @template = template
         end
 
