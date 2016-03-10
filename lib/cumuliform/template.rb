@@ -6,6 +6,7 @@ require_relative 'error'
 require_relative 'dsl/fragments'
 require_relative 'dsl/functions'
 require_relative 'dsl/import'
+require_relative 'dsl/helpers'
 require_relative 'sections'
 require_relative 'output'
 
@@ -19,17 +20,9 @@ module Cumuliform
     include DSL::Import
     include DSL::Fragments
     include DSL::Functions
+    include DSL::Helpers
     include Output
     include Sections
-
-    def helpers(*mods, &block)
-      if block_given?
-        mods << Module.new(&block)
-      end
-      mods.each do |mod|
-        self.class.include mod
-      end
-    end
 
     def define(&block)
       instance_exec(&block)
