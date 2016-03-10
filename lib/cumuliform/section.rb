@@ -1,4 +1,5 @@
 module Cumuliform
+  # @api private
   class Section
     attr_reader :name, :imports, :items
 
