@@ -3,6 +3,13 @@ require_relative '../error'
 module Cumuliform
   module DSL
     module Helpers
+      # Add helper methods to the template
+      #
+      # @overload helpers(mod, ...)
+      #   Include one or more helper modules
+      #   @param mod [Module] Module containing helper methods to include
+      # @overload helpers(&block)
+      #   @param block [lambda] Block containing helper method definitins to include
       def helpers(*mods, &block)
         if block_given?
           mods << Module.new(&block)
