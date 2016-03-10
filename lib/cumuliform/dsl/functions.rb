@@ -161,11 +161,12 @@ module Cumuliform
         # Arguments should be other conditions or things that will evaluate to
         # <tt>true</tt> or <tt>false</tt>.
         #
-        # @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ANDed
-        # @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ANDed (min 2, max 10
-        #   condition args)
+        # @overload and(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed (min 2, max 10
+        #     condition args)
         # @return [Hash] the Fn::And object
         def and(*conditions)
           unless (2..10).cover?(conditions.length)
@@ -183,11 +184,12 @@ module Cumuliform
         # Arguments should be other conditions or things that will evaluate to
         # <tt>true</tt> or <tt>false</tt>.
         #
-        # @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ORed
-        # @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ORed (min 2, max 10
-        #   condition args)
+        # @overload or(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed (min 2, max 10
+        #     condition args)
         # @return [Hash] the Fn::Or object
         def or(*conditions)
           unless (2..10).cover?(conditions.length)
