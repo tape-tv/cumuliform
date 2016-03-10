@@ -3,10 +3,6 @@
 
 require 'set'
 require_relative 'error'
-require_relative 'dsl/fragments'
-require_relative 'dsl/functions'
-require_relative 'dsl/import'
-require_relative 'dsl/helpers'
 require_relative 'sections'
 require_relative 'output'
 
@@ -16,24 +12,22 @@ module Cumuliform
       AWS::Region AWS::StackId AWS::StackName
   }
 
+  # Represents a single CloudFormation template
   class Template
-    include DSL::Import
-    include DSL::Fragments
-    include DSL::Functions
-    include DSL::Helpers
     include Output
     include Sections
 
+    # @api private
     def define(&block)
       instance_exec(&block)
       self
     end
 
+    private
+
     def logical_ids
       @logical_ids ||= Set.new(AWS_PSEUDO_PARAMS)
     end
-
-    private
 
     def has_local_logical_id?(logical_id)
       logical_ids.include?(logical_id)

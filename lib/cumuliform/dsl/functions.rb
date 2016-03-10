@@ -2,9 +2,11 @@ require_relative '../error'
 
 module Cumuliform
   module DSL
+    # DSL methods for working with CloudFormation Intrinsic and Ref functions
     module Functions
       # implements wrappers for the intrinsic functions Fn::*
       class IntrinsicFunctions
+        # @api private
         attr_reader :template
 
         # @api private
@@ -79,6 +81,7 @@ module Cumuliform
         #   the array of Availability Zones of. Empty string (the default) is
         #   equivalent to specifying `ref('AWS::Region')` which evaluates to
         #   the region the stack is being created in
+        # @return [Hash] the Fn::GetAZs object
         def get_azs(value = "")
           {"Fn::GetAZs" => value}
         end
@@ -135,6 +138,7 @@ module Cumuliform
         #   retrieve from <tt>array</tt>
         # @param array [Array, Hash<array-returning ref of intrinsic function>]
         #   The array to retrieve from
+        # @return [Hash] the Fn::Select object
         def select(index, array)
           ref_style_index = index.is_a?(Hash) && index.has_key?("Fn::Ref")
           positive_int_style_index = index.is_a?(Integer) && index >= 0
@@ -159,11 +163,13 @@ module Cumuliform
         # Arguments should be other conditions or things that will evaluate to
         # <tt>true</tt> or <tt>false</tt>.
         #
-        # @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ANDed
-        # @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ANDed (min 2, max 10
-        #   condition args)
+        # @overload and(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed (min 2, max 10
+        #     condition args)
+        # @return [Hash] the Fn::And object
         def and(*conditions)
           unless (2..10).cover?(conditions.length)
             raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
@@ -180,11 +186,13 @@ module Cumuliform
         # Arguments should be other conditions or things that will evaluate to
         # <tt>true</tt> or <tt>false</tt>.
         #
-        # @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ORed
-        # @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #   or condition>] Condition / value to be ORed (min 2, max 10
-        #   condition args)
+        # @overload or(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed (min 2, max 10
+        #     condition args)
+        # @return [Hash] the Fn::Or object
         def or(*conditions)
           unless (2..10).cover?(conditions.length)
             raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
@@ -203,6 +211,7 @@ module Cumuliform
         #
         # @param condition [Hash<boolean-returning ref, intrinsic function, or
         #   condition>] Condition / value to be NOTed
+        # @return [Hash] the Fn::Not object
         def not(condition)
           {"Fn::Not" => [condition]}
         end
@@ -231,12 +240,14 @@ module Cumuliform
       # Parameter or Resource with Logical ID <tt>logical_id</tt>.
       #
       # @param logical_id [String] The logical ID of the parameter or resource
+      # @return [Hash] the Ref object
       def ref(logical_id)
         {"Ref" => xref(logical_id)}
       end
 
       # returns an instance of IntrinsicFunctions which provides wrappers for
       # Fn::* functions
+      # @return [IntrinsicFunctions] the DSL wrapper
       def fn
         @fn ||= IntrinsicFunctions.new(self)
       end

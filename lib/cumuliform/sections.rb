@@ -9,6 +9,7 @@ module Cumuliform
     "Outputs" => :output
   }
 
+  # @api private
   module Sections
     def initialize
       SECTIONS.each do |section_name, _|

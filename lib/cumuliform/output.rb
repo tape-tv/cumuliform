@@ -4,7 +4,13 @@
 require 'json'
 
 module Cumuliform
+  # Manages converting the Cumuliform::Template into a CloudFormation JSON
+  # string
   module Output
+    # Processes the template and returns a hash representing the CloudFormation
+    # template
+    #
+    # @return [Hash] Hash representing the CloudFormation template
     def to_hash
       output = {}
       SECTIONS.each do |section_name, _|
@@ -16,6 +22,10 @@ module Cumuliform
       output
     end
 
+    # Generates the JSON representation of the template from the Hash
+    # representation provided by #to_hash
+    #
+    # @return [String] JSON representation of the CloudFormation template
     def to_json
       JSON.pretty_generate(to_hash)
     end
