@@ -2,8 +2,12 @@ module Cumuliform
   module Error
     # The base error class for id-related errors
     class IDError < StandardError
+      # The logical ID this error refers to
       attr_reader :id
 
+      # Initialize a new IDError for the given ID
+      #
+      # @param id [String] CloudFormation logical ID
       def initialize(id)
         @id = id
       end

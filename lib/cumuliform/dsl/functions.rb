@@ -6,9 +6,11 @@ module Cumuliform
     module Functions
       # implements wrappers for the intrinsic functions Fn::*
       class IntrinsicFunctions
+        # @api private
         attr_reader :template
 
-        def initialize(template) # :nodoc:
+        # @api private
+        def initialize(template)
           @template = template
         end
 

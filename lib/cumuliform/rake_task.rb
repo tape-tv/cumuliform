@@ -1,6 +1,8 @@
 require 'cumuliform/runner'
 
 module Cumuliform
+  # Creates a Rake rule task for converting a Cumuliform template file into a
+  # CloudFormation JSON file
   module RakeTask
     extend self
 

@@ -4,6 +4,8 @@
 require 'json'
 
 module Cumuliform
+  # Manages converting the Cumuliform::Template into a CloudFormation JSON
+  # string
   module Output
     # Processes the template and returns a hash representing the CloudFormation
     # template
