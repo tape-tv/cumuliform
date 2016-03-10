@@ -1,6 +1,6 @@
 # Cumuliform
 
-[![Gem Version](https://badge.fury.io/rb/cumuliform.svg)](http://badge.fury.io/rb/cumuliform) [![Build Status](https://travis-ci.org/tape-tv/cumuliform.svg?branch=master)](https://travis-ci.org/tape-tv/cumuliform) [![Code Climate](https://codeclimate.com/github/tape-tv/cumuliform/badges/gpa.svg)](https://codeclimate.com/github/tape-tv/cumuliform) [![Test Coverage](https://codeclimate.com/github/tape-tv/cumuliform/badges/coverage.svg)](https://codeclimate.com/github/tape-tv/cumuliform/coverage)
+[![Gem Version](https://badge.fury.io/rb/cumuliform.svg)](http://badge.fury.io/rb/cumuliform) [![Build Status](https://travis-ci.org/tape-tv/cumuliform.svg?branch=master)](https://travis-ci.org/tape-tv/cumuliform) [![Code Climate](https://codeclimate.com/github/tape-tv/cumuliform/badges/gpa.svg)](https://codeclimate.com/github/tape-tv/cumuliform) [![Test Coverage](https://codeclimate.com/github/tape-tv/cumuliform/badges/coverage.svg)](https://codeclimate.com/github/tape-tv/cumuliform/coverage) [![Documentation](https://inch-ci.org/github/tape-tv/cumuliform.svg?branch=master)]
 
 Amazon’s [CloudFormation AWS service][cf] provides a way to describe
 infrastructure stacks using a JSON template. We love CloudFormation, and use it
@@ -1058,8 +1058,90 @@ Stacks::Base
 ```
 
 ## Helpers
-_TODO_
+Because templates are actually instances, not classes or modules, you can't
+simply `include` a mixin module. Cumuliform provides a `helpers` DSL method
+that allows you pass in modules, or block containing helper methods, that will
+be made available to the template:
 
+```ruby
+Cumuliform.template do
+  helpers do
+    def ami
+      'ami-accff2b1'
+    end
+  end
+
+  resource 'MyInstance' do
+    {
+      Type: 'AWS::EC2::Instance',
+      Properties: {
+        ImageId: ami,
+        InstanceType: 'm3.medium'
+      }
+    }
+  end
+end
+```
+
+Which evaluates to:
+
+```
+{
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-accff2b1",
+        "InstanceType": "m3.medium"
+      }
+    }
+  }
+}
+```
+
+Or using a module:
+
+```ruby
+module AmiHelper
+  def ami
+    'ami-accff2b1'
+  end
+end
+
+Cumuliform.template do
+  helpers AmiHelper
+
+  resource 'MyInstance' do
+    {
+      Type: 'AWS::EC2::Instance',
+      Properties: {
+        ImageId: ami,
+        InstanceType: 'm3.medium'
+      }
+    }
+  end
+end
+```
+
+Which also evaluates to:
+
+```
+{
+  "Resources": {
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-accff2b1",
+        "InstanceType": "m3.medium"
+      }
+    }
+  }
+}
+```
+
+Helper methods are not able to access any methods on the template (like
+`resource`), they're really for wrapping complex external calls (for example, a
+class that fetches an API token you need to use in your template).
 
 # Development
 
