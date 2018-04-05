@@ -1,3 +1,4 @@
+require 'rake/tasklib'
 require 'cumuliform/runner'
 
 module Cumuliform
