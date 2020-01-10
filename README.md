@@ -17,9 +17,7 @@ provides a simple DSL that generates reliably valid JSON and enforces
 referential integrity through convenience wrappers around the common points
 where CloudFormation expects references between resources. provides.
 
-Cumuliform has been extracted from ops and deployment code at [tape.tv][tape]
-
-[tape]: https://www.tape.tv/
+Cumuliform was originally extracted from ops and deployment code at tape.tv
 
 ## Installation
 
@@ -281,8 +279,36 @@ The generated template is:
 }
 ```
 
-Note that the optional `AWSTemplateFormatVersion`, `Description`, and
-`Metadata` sections are *not* currently supported.
+Note that the optional `AWSTemplateFormatVersion`, and `Metadata` sections are
+*not* currently supported.
+
+Here's a trivial template that specifies a `Transform` top-level value (e.g. for [AWS SAM][])
+
+[AWS SAM]: https://github.com/awslabs/serverless-application-model
+
+```ruby
+Cumuliform.template do
+  transform 'AWS::Serverless-2016-10-31'
+  resource 'MyFunction' do
+    {
+      Type: 'AWS::Serverless::Function'
+    }
+  end
+end
+```
+
+And the result:
+
+```json
+{
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Resources": {
+    "MyFunction": {
+      "Type": "AWS::Serverless::Function"
+    }
+  }
+}
+```
 
 ## Intrinsic functions
 

@@ -49,6 +49,27 @@ describe Cumuliform::Template do
       end
     end
 
+    context "top-level values" do
+      before :each do
+        subject.resource "Hello" do
+          {k: "v"}
+        end
+      end
+
+      it "allows a Transform to be declared" do
+        subject.transform('AWS::Serverless-2016-10-31')
+        output = subject.to_hash
+
+        expect(output['Transform']).to eq('AWS::Serverless-2016-10-31')
+      end
+
+      it "allows a Description to be declared" do
+        subject.description('E.g.')
+        output = subject.to_hash
+
+        expect(output['Description']).to eq('E.g.')
+      end
+    end
   end
 
   context "output" do

@@ -8,16 +8,18 @@ module Cumuliform
     "Resources" => :resource,
     "Outputs" => :output
   }
+  SECTION_NAMES = SECTIONS.map { |name, _| name }
 
   # @api private
   module Sections
     def initialize
-      SECTIONS.each do |section_name, _|
+      SECTION_NAMES.each do |section_name|
         instance_variable_set(:"@#{section_name}", Section.new(section_name, imports))
       end
     end
 
     def get_section(name)
+      raise ArgumentError, "#{name} is not a valid template section" unless SECTION_NAMES.include?(name)
       instance_variable_get(:"@#{name}")
     end
 

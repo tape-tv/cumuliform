@@ -13,7 +13,11 @@ module Cumuliform
     # @return [Hash] Hash representing the CloudFormation template
     def to_hash
       output = {}
-      SECTIONS.each do |section_name, _|
+      TOP_LEVEL.each do |item_name|
+        value = get_top_level_value(item_name)
+        output[item_name] = value unless value.nil?
+      end
+      SECTION_NAMES.each do |section_name|
         section = get_section(section_name)
         output[section_name] = generate_section(section) unless section.empty?
       end
