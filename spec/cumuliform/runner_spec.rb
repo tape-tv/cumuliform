@@ -37,7 +37,7 @@ end
       EOF
 
       Cumuliform::Runner.process_io(input)
-      expect { GUBBINS }.to raise_error
+      expect { GUBBINS }.to raise_error(NameError)
     end
   end
 
