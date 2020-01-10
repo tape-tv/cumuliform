@@ -3,8 +3,6 @@ env:
     - CC_TEST_REPORTER_ID=ad171accd9e47d577857f84b0d9032042ea70bf942a219bfa4f5582b5e504a60
 language: ruby
 sudo: false
-rvm:
-  2.4.3
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
