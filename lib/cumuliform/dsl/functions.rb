@@ -4,8 +4,111 @@ module Cumuliform
   module DSL
     # DSL methods for working with CloudFormation Intrinsic and Ref functions
     module Functions
+      # implements the intrinsic conditions functions
+      module ConditionFunctions
+        # Wraps Fn::And
+        #
+        # see
+        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86066
+        #
+        # Behaves as a logical AND operator for CloudFormation conditions.
+        # Arguments should be other conditions or things that will evaluate to
+        # <tt>true</tt> or <tt>false</tt>.
+        #
+        # @overload and(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ANDed (min 2, max 10
+        #     condition args)
+        # @return [Hash] the Fn::And object
+        def and(*conditions)
+          unless (2..10).cover?(conditions.length)
+            raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
+          end
+          {"Fn::And" => conditions}
+        end
+
+        # Wraps Fn::Or
+        #
+        # see
+        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86490
+        #
+        # Behaves as a logical OR operator for CloudFormation conditions.
+        # Arguments should be other conditions or things that will evaluate to
+        # <tt>true</tt> or <tt>false</tt>.
+        #
+        # @overload or(condition_1, ..., condition_n)
+        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed
+        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
+        #     or condition>] Condition / value to be ORed (min 2, max 10
+        #     condition args)
+        # @return [Hash] the Fn::Or object
+        def or(*conditions)
+          unless (2..10).cover?(conditions.length)
+            raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
+          end
+          {"Fn::Or" => conditions}
+        end
+
+        # Wraps Fn::Not
+        #
+        # see
+        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86402
+        #
+        # Behaves as a logical NOT operator for CloudFormation conditions. The
+        # argument should be another condition or something that will evaluate
+        # to <tt>true</tt> or <tt>false</tt>
+        #
+        # @param condition [Hash<boolean-returning ref, intrinsic function, or
+        #   condition>] Condition / value to be NOTed
+        # @return [Hash] the Fn::Not object
+        def not(condition)
+          {"Fn::Not" => [condition]}
+        end
+
+        # Wraps Fn::Equals
+        #
+        # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86148
+        #
+        # The arguments should be the literal values or refs you want to
+        # compare. Returns true or false when CloudFormation evaluates the
+        # template.
+        #
+        # @param value [String, Hash<value-returning ref>]
+        # @param other_value [String, Hash<value-returning ref>]
+        # @return [Hash] the Fn::Equals object
+        def equals(value, other_value)
+          {"Fn::Equals" => [value, other_value]}
+        end
+
+        # Wraps Fn::If
+        #
+        # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86223
+        #
+        # CloudFormation evaluates the Condition referred to the logical ID in
+        # the <tt>condition</tt> arg and returns the <tt>true_value</tt> if
+        # <tt>true</tt> and <tt>false_value</tt> otherwise. <tt>condition</tt>
+        # cannot be an <tt>Fn::Ref</tt>, but you can use our <tt>xref()</tt>
+        # helper to ensure the logical ID is valid.
+        #
+        # @param condition[String] the Logical ID of the Condition to be
+        #   checked
+        # @param true_value the value to be returned if <tt>condition</tt>
+        #   evaluates true
+        # @param false_value the value to be returned if <tt>condition</tt>
+        #   evaluates false
+        # @return [Hash] the Fn::If object
+        def if(condition, true_value, false_value)
+          {"Fn::If" => [condition, true_value, false_value]}
+        end
+
+      end
       # implements wrappers for the intrinsic functions Fn::*
       class IntrinsicFunctions
+        include ConditionFunctions
+
         # @api private
         attr_reader :template
 
@@ -86,42 +189,6 @@ module Cumuliform
           {"Fn::GetAZs" => value}
         end
 
-        # Wraps Fn::Equals
-        #
-        # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86148
-        #
-        # The arguments should be the literal values or refs you want to
-        # compare. Returns true or false when CloudFormation evaluates the
-        # template.
-        #
-        # @param value [String, Hash<value-returning ref>]
-        # @param other_value [String, Hash<value-returning ref>]
-        # @return [Hash] the Fn::Equals object
-        def equals(value, other_value)
-          {"Fn::Equals" => [value, other_value]}
-        end
-
-        # Wraps Fn::If
-        #
-        # see http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86223
-        #
-        # CloudFormation evaluates the Condition referred to the logical ID in
-        # the <tt>condition</tt> arg and returns the <tt>true_value</tt> if
-        # <tt>true</tt> and <tt>false_value</tt> otherwise. <tt>condition</tt>
-        # cannot be an <tt>Fn::Ref</tt>, but you can use our <tt>xref()</tt>
-        # helper to ensure the logical ID is valid.
-        #
-        # @param condition[String] the Logical ID of the Condition to be
-        #   checked
-        # @param true_value the value to be returned if <tt>condition</tt>
-        #   evaluates true
-        # @param false_value the value to be returned if <tt>condition</tt>
-        #   evaluates false
-        # @return [Hash] the Fn::If object
-        def if(condition, true_value, false_value)
-          {"Fn::If" => [condition, true_value, false_value]}
-        end
-
         # Wraps Fn::Select
         #
         # see
@@ -154,66 +221,81 @@ module Cumuliform
           {"Fn::Select" => [index, array]}
         end
 
-        # Wraps Fn::And
+        # Wraps Fn::Cidr
         #
         # see
-        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86066
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-cidr.html
         #
-        # Behaves as a logical AND operator for CloudFormation conditions.
-        # Arguments should be other conditions or things that will evaluate to
-        # <tt>true</tt> or <tt>false</tt>.
-        #
-        # @overload and(condition_1, ..., condition_n)
-        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #     or condition>] Condition / value to be ANDed
-        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #     or condition>] Condition / value to be ANDed (min 2, max 10
-        #     condition args)
-        # @return [Hash] the Fn::And object
-        def and(*conditions)
-          unless (2..10).cover?(conditions.length)
-            raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
-          end
-          {"Fn::And" => conditions}
+        # @param ip_block [String] The user-specified CIDR address block to be
+        #   split into smaller CIDR blocks. (e.g. "10.0.0.0/16")
+        # @param count [Integer] The number of CIDRs to generate. Valid range is
+        #   between 1 and 256.
+        # @param cidr_bits [Integer] The number of subnet bits for the CIDR. For
+        #   example, specifying a value "8" for this parameter will create a
+        #   CIDR with a mask of "/24".
+        # @return [Hash] The Fn::Cidr object
+        def cidr(ip_block, count, cidr_bits)
+          {"Fn::Cidr" => [ip_block, count, cidr_bits]}
         end
 
-        # Wraps Fn::Or
+        # Wraps Fn::ImportValue
         #
         # see
-        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86490
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
         #
-        # Behaves as a logical OR operator for CloudFormation conditions.
-        # Arguments should be other conditions or things that will evaluate to
-        # <tt>true</tt> or <tt>false</tt>.
-        #
-        # @overload or(condition_1, ..., condition_n)
-        #   @param condition_1 [Hash<boolean-returning ref, intrinsic function,
-        #     or condition>] Condition / value to be ORed
-        #   @param condition_n [Hash<boolean-returning ref, intrinsic function,
-        #     or condition>] Condition / value to be ORed (min 2, max 10
-        #     condition args)
-        # @return [Hash] the Fn::Or object
-        def or(*conditions)
-          unless (2..10).cover?(conditions.length)
-            raise ArgumentError, "You must specify AT LEAST 2 and AT MOST 10 conditions"
-          end
-          {"Fn::Or" => conditions}
+        # @param shared_value_to_import [String] The stack output value to
+        #   import
+        # @return [Hash] The Fn::ImportValue object
+        def import_value(shared_value_to_import)
+          {"Fn::ImportValue" => shared_value_to_import}
         end
 
-        # Wraps Fn::Not
+        # Wraps Fn::Split
         #
         # see
-        # http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html#d0e86402
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-split.html
         #
-        # Behaves as a logical NOT operator for CloudFormation conditions. The
-        # argument should be another condition or something that will evaluate
-        # to <tt>true</tt> or <tt>false</tt>
+        # @param delimiter [String] The delimiter to split the source_string on
+        # @param source_string [String] The string to split
+        # @return [Hash] The Fn::Split object
+        def split(delimiter, source_string)
+          {"Fn::Split" => [delimiter, source_string]}
+        end
+
+        # Wraps Fn::Sub
         #
-        # @param condition [Hash<boolean-returning ref, intrinsic function, or
-        #   condition>] Condition / value to be NOTed
-        # @return [Hash] the Fn::Not object
-        def not(condition)
-          {"Fn::Not" => [condition]}
+        # see
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
+        #
+        # @param string [String] The string to substitute values into
+        # @param substitutions [Hash<String => String,Hash>] Optional hash of
+        #   variable names and the value to substitute them for. The value can
+        #   also be somethings like an Fn:Ref invocation.
+        # @return [Hash] The Fn::Sub object
+        def sub(string, substitutions = nil)
+          if substitutions.nil?
+            args = string
+          else
+            args = [string, substitutions]
+          end
+          {"Fn::Sub" => args}
+        end
+
+        # Wraps Fn::Transform
+        #
+        # see
+        # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-transform.html
+        #
+        # @param macro_name [String] The name of the macro to call
+        # @param parameters [Hash] The hash of parameter names/values
+        # @return [Hash] The Fn::Transform object
+        def transform(macro_name, parameters = {})
+          {
+            "Fn::Transform" => {
+              "Name" => macro_name,
+              "Parameters" => parameters
+            }
+          }
         end
       end
 
