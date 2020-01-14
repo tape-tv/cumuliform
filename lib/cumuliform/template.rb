@@ -8,8 +8,8 @@ require_relative 'output'
 
 module Cumuliform
   AWS_PSEUDO_PARAMS = %w{
-      AWS::AccountId AWS::NotificationARNs AWS::NoValue
-      AWS::Region AWS::StackId AWS::StackName
+    AWS::AccountId AWS::NotificationARNs AWS::NoValue AWS::Partition
+    AWS::Region AWS::StackId AWS::StackName AWS::URLSuffix
   }
   TOP_LEVEL = %w{ Transform Description }
 
